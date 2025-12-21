@@ -1,4 +1,5 @@
 import { readdir } from "node:fs/promises"; 
+import { $ } from "bun";
 async function tree(path:string){
     let out = [path]
     if(await Bun.file(path).exists()){
@@ -39,4 +40,11 @@ export async function listFiles(libraryType:string){
     return files
 }
 
+export async function syncMusic(){
+    let pwd = await $`pwd`.text()
+    let scriptPath=pwd.substring(0,pwd.length-1) + "/syncMusic.sh"
+    console.log(scriptPath)
 
+    Bun.spawn(["/bin/bash",scriptPath])
+    
+}
