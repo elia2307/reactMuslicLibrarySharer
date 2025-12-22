@@ -63,14 +63,15 @@ export class NetworkingHandler extends React.Component{
              let res = await fetch(url, {
                 method: 'GET'
             })
-                //let resJson=await res.json()
+                let resJson=await res.json()
                 
-                //alert(resJson)
-                let text = await res.text()
+                alert("Success")
+                let text = JSON.stringify(resJson)
                 setResponseText(text)
                 //alert(await res.text())
-            }catch{
+            }catch(error) {
                 alert("Error in fetch request:" + url)
+                alert(error)
             }
         }
 
