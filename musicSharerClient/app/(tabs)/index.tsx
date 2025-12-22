@@ -4,14 +4,19 @@ import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import {ThemedTextInput, IpAddressInput} from '@/components/themed-textInput'
+
+import { NetworkingHandler } from '@/components/networkingHandler';
+
+
 import { Link } from 'expo-router';
 
-import { useThemeColor } from '@/hooks/use-theme-color';
 
 
 
 export default function HomeScreen() {
+
+  let networkingHandler = new NetworkingHandler({})
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -28,7 +33,7 @@ export default function HomeScreen() {
       <ThemedView style={styles.stepContainer}>
 
         <ThemedText type="subtitle">Type ip address of remote computer:</ThemedText>
-        <IpAddressInput defaultValue="" placeholder="Ip address of computer" />
+        <networkingHandler.render/>
         <ThemedText type="subtitle">Run SyncMusic on Computer</ThemedText>
         <ThemedText>
           Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.

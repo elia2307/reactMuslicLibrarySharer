@@ -39,6 +39,7 @@ export async function listFiles(libraryType:string){
 }
 
 export async function syncMusic(){
+    console.log("Syncing Music")
     let pwd = await $`pwd`.text()
     let scriptPath=pwd.substring(0,pwd.length-1) + "/syncMusic.sh"
     Bun.spawn(["/bin/bash",scriptPath])

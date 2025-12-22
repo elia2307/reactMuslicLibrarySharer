@@ -1,0 +1,5 @@
+To run client 
+npx expo start
+
+Server:
+bun dev 
