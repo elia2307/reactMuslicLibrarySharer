@@ -33,8 +33,6 @@ export async function listFiles(libraryType:string){
     else{
         return "invalid library type";
     }
-
-    
     let files = await tree(path)
     files = files.map( (s) => libraryType +"/"+ s.substring(path.length))
     return files
@@ -43,8 +41,6 @@ export async function listFiles(libraryType:string){
 export async function syncMusic(){
     let pwd = await $`pwd`.text()
     let scriptPath=pwd.substring(0,pwd.length-1) + "/syncMusic.sh"
-    console.log(scriptPath)
-
     Bun.spawn(["/bin/bash",scriptPath])
     
 }
