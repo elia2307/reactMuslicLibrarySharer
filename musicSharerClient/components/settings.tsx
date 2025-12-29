@@ -3,7 +3,6 @@ import * as React from 'react';
 import { File, Directory, Paths } from 'expo-file-system';
 
 
-import { pickDirectory } from '@react-native-documents/picker';
 
 import { ThemedTextInput} from '@/components/themed-textInput'
 import { ThemedText } from './themed-text';
@@ -51,18 +50,21 @@ export function SettingsComponent(props:SettingsProps){
             }} placeholder="Port of computer"/>
             <ThemedText>"Save Path:" {configData.savePath}</ThemedText>
             <ThemedButton onPress={async () =>  {
-                /*Directory.pickDirectoryAsync().then((value) => {
-                    //if(!value.exists)return;
-
-                    let path = value.info().uri
-                    alert(path)
-                    if(path == undefined) return;
-                    setConfigData((prev) => ({...prev,savePath:path}))
-             })*/
-                const res = await pickDirectory();
-                alert(res)
-
+                let res = await Directory.pickDirectoryAsync()
+                if(!res.exists){
+                    alert("Doesn't exist:" + res)
+                    return;
+                }
+                let path =res.uri
+                if(path == undefined) return;
+                setConfigData((prev) => ({...prev,savePath:path}))
             }}  color='#841584' title='Pick output directory'/>
+            
+            <Select>
+                <Option value="mp3">mp3</Option>
+                <Option value="flac">flac</Option>
+            </Select>
+
             <ThemedButton onPress={() =>saveData(path,configData)} color='#841584' title='Save Settings'/>
         </ThemedView>
 
@@ -78,8 +80,8 @@ function readConfigFromFile(path:string){
             return configInfo
         }
         let lines= file.textSync().split("\n");
-        for (let line in lines){
-            let values = line.split(":")
+        for (let index in lines){
+            let values = lines[index].split(":")
             switch (values[0]){
                 case "ip":
                     configInfo.ip=values[1]
@@ -94,7 +96,7 @@ function readConfigFromFile(path:string){
                     configInfo.dataType=values[1]
                     break;
                 default:
-                    throw new Error("Invalid identifier name in config:"+values[0])
+                    console.log("Invalid identifier name in config:"+values[0])
             }
         }
     }
