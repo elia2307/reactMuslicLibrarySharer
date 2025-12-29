@@ -1,6 +1,8 @@
 import { StyleSheet, TextInputChangeEvent} from 'react-native';
 import * as React from 'react';
-import { File, Directory, Paths } from 'expo-file-system';
+import { Directory} from 'expo-file-system';
+
+import {isValidPort, isValidIpAddress, readConfigFromFile, ConfigData, saveData} from '@/components/utils'
 
 import {Picker} from '@react-native-picker/picker'
 
@@ -13,17 +15,8 @@ interface SettingsProps {
     path?: string;
 }
 
-interface ConfigData {
-    ip:string;
-    port:Number;
-    savePath:string;
-    dataType:string;
-}
-
-
 export function SettingsComponent(props:SettingsProps){ 
 
-    let headerBackgroundColor={ light: '#A1CEDC', dark: '#1D3D47' }
     let pickerStyle = StyleSheet.create({
         lightContainer: {
             backgroundColor: '#d0d0c0',
@@ -96,87 +89,4 @@ export function SettingsComponent(props:SettingsProps){
 
     )
 }
-function readConfigFromFile(path:string){
-    let configInfo :ConfigData  = {ip:"",port:0,savePath:"",dataType:""}
 
-    try{
-        const file = new File(Paths.cache, path);
-        if(!file.exists){
-            file.create()
-            return configInfo
-        }
-        let lines= file.textSync().split("\n");
-        for (let index in lines){
-            let values = lines[index].split(":")
-            switch (values[0]){
-                case "ip":
-                    configInfo.ip=values[1]
-                    break;
-                case "port":
-                    configInfo.port=Number(values[1])
-                    break;
-                case "savePath":
-                    configInfo.savePath=values[1]
-                    break;
-                case "dataType":
-                    configInfo.dataType=values[1]
-                    break;
-                default:
-                    console.log("Invalid identifier name in config:"+values[0])
-            }
-        }
-    }
-    catch (error){
-        console.log(error);
-    }
-    return configInfo
-
-}
-function isValidIpAddress(str:string){
-    //checks if ip address up to point could become valid 
-    //only ipv4
-    let parts = str.split('.')
-    if(parts.length > 4)return false
-    for(let i in parts){
-        let part = parts[i];
-        if(part.length > 1 && part[0] == '0')return false
-        try {
-            if(!Number.isFinite(Number(part))){
-                return false //not a number
-            }
-            let num = Number(part)
-            if(num <0 || num >255)return false
-        }
-        catch {
-            return false //error not a number
-        }
-    }
-    return true
-}
-function isValidPort(port:string){
-    try{
-        let num = Number(port)
-        if(num <0 || num > 65535)return false
-        if(num % 1 != 0)return false
-
-    }catch{
-        return false //error not a number
-    }
-    return true 
-}
-function saveData(path:string, configInfo:ConfigData){
-    try{
-        const file = new File(Paths.cache, path)
-        let text = "ip:"+configInfo.ip + "\n"
-        text+="port:"+configInfo.port.toString() + "\n"
-        text +="savePath:"+configInfo.savePath + "\n"
-        text+="dataType:"+configInfo.dataType
-        if(!file.exists){
-            file.create()
-        }
-        file.write(text)
-        alert("Data saved:"+text)
-    }catch(error){
-        console.log(error);
-    }
-}
