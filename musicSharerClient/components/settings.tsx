@@ -1,8 +1,8 @@
-import {  TextInputChangeEvent} from 'react-native';
+import { StyleSheet, TextInputChangeEvent} from 'react-native';
 import * as React from 'react';
 import { File, Directory, Paths } from 'expo-file-system';
 
-
+import {Picker} from '@react-native-picker/picker'
 
 import { ThemedTextInput} from '@/components/themed-textInput'
 import { ThemedText } from './themed-text';
@@ -22,6 +22,24 @@ interface ConfigData {
 
 
 export function SettingsComponent(props:SettingsProps){ 
+
+    let headerBackgroundColor={ light: '#A1CEDC', dark: '#1D3D47' }
+    let pickerStyle = StyleSheet.create({
+        lightContainer: {
+            backgroundColor: '#d0d0c0',
+
+        },
+        darkContainer: {
+            backgroundColor: '#a02c40',
+        },
+        lightThemeText: {
+            color: '#242c40',
+        },
+        darkThemeText: {
+            color: '#e0e0e0',
+        },
+    })
+
 
 
     let path = "musicSharer.config"
@@ -59,11 +77,19 @@ export function SettingsComponent(props:SettingsProps){
                 if(path == undefined) return;
                 setConfigData((prev) => ({...prev,savePath:path}))
             }}  color='#841584' title='Pick output directory'/>
-            
-            <Select>
-                <Option value="mp3">mp3</Option>
-                <Option value="flac">flac</Option>
-            </Select>
+            <ThemedText>Music data type from server:
+            </ThemedText>
+            <Picker 
+                style={ [pickerStyle.darkContainer]}
+                selectedValue={configData.dataType}
+                onValueChange= {(type) => setConfigData((prev) => ({...prev,dataType:type}))}
+                prompt="File type of music to copy from server"
+            >
+                <Picker.Item label="Select File Type" enabled={false} />
+                <Picker.Item label="mp3" style = {{height:100, backgroundColor: "#242c40"}} color = "#e0e0e0" value="mp3" />
+                <Picker.Item label = "flac" style = {{height: 100, backgroundColor: '#242c40', flex: 0.4}} color = "#e0e0e0" value="flac" />
+            </Picker>
+
 
             <ThemedButton onPress={() =>saveData(path,configData)} color='#841584' title='Save Settings'/>
         </ThemedView>
