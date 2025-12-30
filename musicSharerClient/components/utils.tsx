@@ -164,15 +164,18 @@ export function getListOfFiles(path:string){
 }
 
 function listCleanDirectory(directory:Directory, prefix:string){
-    let files:String[] = []
-    const contents = directory.list()
+    let files:string[] = []
+    let contents = directory.list()
     for( const item of contents){
+        //let fileName:string = prefix + item.name
+        let fileName:string = prefix.concat("/",item.name)
         if( item instanceof Directory){
-            let tmp:String[] = listCleanDirectory(item, prefix+"/"+item.name)
-            files = [ ...files,...tmp]
+            let tmp:string[] = listCleanDirectory(item, fileName)
+            files = files.concat(tmp)
         }
         else{
-            files.push(prefix+"/" + item.name)
+            
+            files.push(fileName)
         }
     }
     return files
@@ -190,6 +193,8 @@ export function getCleanListOfFiles(path:string){
 }
 
 export function uriToUnixPath(path:string){
+    //TODO remove weird .documents/tree/ stuff at end of path 
+    //
     let cleanedPath:string=""
     for(let i=0; i<path.length;i++){
         if(path[i]==='%'){
@@ -215,9 +220,16 @@ export function getListOfFilesCleaned(path:string, prefix:string){
         prefix+="/"
     }
     path=uriToUnixPath(path)
-    let fileStrings = files.map((s) => prefix+=s)
+    let fileStrings = files.map((s) => {
+        let startIndex = s[0] == '/' ? 1 : 0
+        //make sure that double / is not created at concatination
+        return prefix.concat(s.substring(startIndex))
+    })
     let restTime = (Date.now()/1000)-start - listTime
-    alert("Took " + listTime.toString()  + " seconds to list files and " + restTime.toString() + " seconds to sanitise output")
+    let debugString = "Took " + listTime.toString()  + " seconds to list files and " + restTime.toString() + " seconds to sanitise output\nlength of array:"+fileStrings.length.toString() + " value 1 of array:"+fileStrings[0]
+    debugString+="\n Size of final element in array: " + fileStrings[fileStrings.length-1].length.toString()
+    console.log(debugString)
+    console.log(fileStrings[fileStrings.length-1])
     return fileStrings
 
 }

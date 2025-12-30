@@ -19,10 +19,12 @@ export default function HomeScreen() {
 
 
     let configPath ="musicSharer.config" 
-
+    let fileInfoCachePath="cleanedListOfFiles.cache"
     let config = readConfigFromFile(configPath)
     let [responseText,setResponseText]=React.useState("")
     let [value, reloadPage]=React.useState(false)
+    let [pageNumber, setPageNumber] = React.useState(0)
+    const pageLength=1000 
     async function serverRequest(api:string){
         let json = await sendRequest("http://"+config.ip + ":"+config.port.toString()+api)
         setResponseText(JSON.stringify(json))
@@ -51,27 +53,38 @@ export default function HomeScreen() {
                 <ThemedButton onPress={() => serverRequest("/api/syncMusic")} color="#841584" title="Sync Music" />
                 <ThemedButton onPress={() => serverRequest("/api/listFiles/original")} color="#841584" title="Get Flac Library List" />
                 <ThemedButton onPress={() => serverRequest("/api/listFiles/compressed")} color="#841584" title="Get Mp3 Library List" />
-                <ThemedButton onPress={() => {
-                    alert("Started, can take a while")
-                    const file = new File(Paths.cache, "cleanedListOfFiles.txt")
+                <ThemedButton onPress={async () => {
+                    const file = new File(Paths.cache, fileInfoCachePath)
+                    alert("Started Can Take A long time:")
                     if(!file.exists){
-                        let f = getListOfFilesCleaned(config.savePath, "library/")
-                        file.create()
-                        let str = f.reduce((s:string,val) => s+val + "\n")
+                        console.log("No cache, Fetching file list")
+                        let files = getListOfFilesCleaned(config.savePath, "library/")
+                        let str = ""
+                        for (const file of files){
+                            str+=file+"\n"
+                        }
+                        file.create({overwrite:true})
                         file.write(str)
-                    
                         setResponseText(str)
                     }else{
-                        setResponseText(file.textSync())
+                        console.log("File exists in cache")
+                        let str = await file.text()
+                        setResponseText("File exists in cache:\n"+str)
                     }
                 }} color="#841584" title="List Files in Save Path" />
-                <ThemedText >Response from server: {responseText}</ThemedText>
+                <ThemedText> Warning, Delete Cache:</ThemedText>
                 <ThemedButton onPress={ () => {
-                    let file = new File(Paths.cache, "cleanedListOfFiles.txt")
+                    let file = new File(Paths.cache,fileInfoCachePath )
                     if(!file.exists)return
-                    file.delete()
+                        file.delete()
+                        alert("File deleted")
                     }} 
                     title = "Clear list of files Cache" color= "#a02c40"/>
+                <ThemedText type="subtitle">Page {pageNumber} of response text out of {Math.floor(responseText.length / pageLength)} pages </ThemedText>
+                <ThemedButton onPress = {() => setPageNumber(0)} color="#841584" title="Page 0"/>
+                <ThemedButton onPress = {() => setPageNumber(Math.max(pageNumber-1,0))} color="#841584" title="Previous Page"/>
+                <ThemedButton onPress = {() => setPageNumber(Math.min(pageNumber+1, Math.floor(responseText.length/pageLength)))} color="#841584" title="Next Page"/>
+                <ThemedText >Response from server: {responseText.substring(pageNumber*pageLength,pageNumber*pageLength+pageLength)}</ThemedText>
             </ThemedView>
         </ParallaxScrollView>
     );
