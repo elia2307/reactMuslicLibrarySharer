@@ -124,12 +124,100 @@ export async function sendRequest(url:string){
         let res = await fetch(url, {
             method: 'GET'
         })
+        if(!res.ok){
+            return {Error:"Response code:"+res.status}
+        }
         let resJson=await res.json()
-
-        alert("Success")
         return resJson
     }catch(error) {
         alert("Error in fetch request:" + url)
         alert(error)
+        return {Error:error}
     }
+}
+
+function listDirectory(directory:Directory){
+    let files:File[] = []
+    const contents = directory.list();
+    for( const item of contents){
+        if ( item instanceof Directory){
+            let tmp:File[] = listDirectory(item)
+            files = [...files,...tmp]
+
+        }
+        else{
+            files.push(item)
+        }
+    }
+    return files
+}
+
+export function getListOfFiles(path:string){
+    try{
+        let files = listDirectory(new Directory(path)) 
+        //alert(files.length)
+        return files 
+    }catch(error){
+        alert(error)
+        return []
+    }
+}
+
+function listCleanDirectory(directory:Directory, prefix:string){
+    let files:String[] = []
+    const contents = directory.list()
+    for( const item of contents){
+        if( item instanceof Directory){
+            let tmp:String[] = listCleanDirectory(item, prefix+"/"+item.name)
+            files = [ ...files,...tmp]
+        }
+        else{
+            files.push(prefix+"/" + item.name)
+        }
+    }
+    return files
+}
+
+export function getCleanListOfFiles(path:string){
+    try {
+        let files = listCleanDirectory(new Directory(path),"")
+        return files
+    }catch (error){
+        alert(error)
+        return []
+    }
+    
+}
+
+export function uriToUnixPath(path:string){
+    let cleanedPath:string=""
+    for(let i=0; i<path.length;i++){
+        if(path[i]==='%'){
+            let code = parseInt(path.substring(i+1,i+3),16)
+            cleanedPath+=String.fromCharCode(code)
+            i+=2 //skip next 2 characters (hex codes)
+        }
+        else{
+            cleanedPath+=path[i]
+        }
+    }
+    return cleanedPath
+}
+
+export function getListOfFilesCleaned(path:string, prefix:string){
+    //removes path from start of all paths and replaces it with prefix string
+    //returns list of strings
+    //allows format for unix file system
+    let start = Date.now() /1000
+    let files = getCleanListOfFiles(path)
+    let listTime = (Date.now()/1000) - start
+    if(prefix[prefix.length-1]!="/"){
+        prefix+="/"
+    }
+    path=uriToUnixPath(path)
+    let fileStrings = files.map((s) => prefix+=s)
+    let restTime = (Date.now()/1000)-start - listTime
+    alert("Took " + listTime.toString()  + " seconds to list files and " + restTime.toString() + " seconds to sanitise output")
+    return fileStrings
+
 }

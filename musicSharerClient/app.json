@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "musicSharerClient",
+    "name": "MusicSharerClient",
     "slug": "musicSharerClient",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -21,7 +21,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.musicSharerClient"
+      "package": "com.anonymous.musicSharerClient",
+      "permissions": ["android.permission.MANAGE_EXTERNAL_STORAGE"]
     },
     "web": {
       "output": "static",
