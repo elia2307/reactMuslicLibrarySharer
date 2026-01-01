@@ -41,7 +41,7 @@ export async function syncMusic(){
     let pwd = await $`pwd`.text()
     let scriptPath=pwd.substring(0,pwd.length-1) + "/syncMusic.sh"
     Bun.spawn(["/bin/bash",scriptPath])
-    
+
 }
 
 export async function findMissingFiles(fileList: string){
@@ -77,6 +77,47 @@ export async function findMissingFiles(fileList: string){
         }
 
     }
-    console.log(missingFiles.length)
+    console.log("Number of Missing Files:" + missingFiles.length)
     return missingFiles
+}
+
+
+export async function downloadFile(filePath:string)
+{    
+    try{
+        filePath = decodeURIComponent(filePath)
+        console.log(filePath)
+    }catch(error){
+        console.error(error)
+        return 
+    }
+
+    let path = "" 
+    let libraryType=filePath.substring(0,filePath.indexOf("/")).toLowerCase()
+    let localPath = filePath.substring(filePath.indexOf("/")+1)
+    if( libraryType == "original" ||libraryType == "flac"){
+        path= "/mnt/Data/Music/"
+    }
+    else if (libraryType == "mp3" || libraryType == "compressed"){
+        path= "/mnt/Data/mp3Lib/"
+    }
+    else{
+        console.log("Invalid path")
+        return
+    }
+    
+    let pathParts = localPath.split("/")
+    for(let part of pathParts){
+        if(part === "." || part ===".."){
+            console.log("Invalid path, . or .. in path")
+            return
+        }
+    }
+    path+=localPath
+    const file = Bun.file(path)
+    if(!await file.exists()){
+        console.log("Invalid file doesn't exist")
+        return
+    }
+    return file
 }

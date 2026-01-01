@@ -15,13 +15,13 @@ export function MissingFiles(props:MissingFilesProps){
     let [missingFiles, setMissingFiles] = React.useState<string[]>([])
     let [downloaderEnabled, setDownloaderEnabled] = React.useState<boolean>(false)
     let [fileIndex,setFileIndex] = React.useState(0)
-    let view = (<ThemedView></ThemedView>)
+    let downloadingView = (<ThemedView></ThemedView>)
     if(downloaderEnabled){
-        let progressText = "downloading "  +fileIndex.toString() + " out of " + missingFiles.length
-        progressText +="\n current file: " + missingFiles[fileIndex]
-        view = (
+        let progressText = "Downloading "  +fileIndex.toString() + " out of " + missingFiles.length
+        progressText +="\n Current file: " + missingFiles[fileIndex]
+        downloadingView = (
             <ThemedView>
-                <ThemedButton onPress = { () => setFileIndex(fileIndex+1)} title="Next file" color="#841584" />
+                <ThemedButton onPress = { () => setFileIndex((fileIndex+1) % missingFiles.length)} title="Next file" color="#841584" />
                 <ThemedText> {progressText} </ThemedText>
             </ThemedView>
         )
@@ -34,7 +34,7 @@ export function MissingFiles(props:MissingFilesProps){
                 setDownloaderEnabled(true)
                 setMissingFiles(files)                           
             }} color='#841584' title="Download list of missing files from server" />
-            {view}
+            {downloadingView}
         </ThemedView>
     )
 
