@@ -15,18 +15,21 @@ import * as React from 'react';
 
 import { uriToUnixPath, readConfigFromFile, sendRequest, getListOfFilesCleaned } from '@/components/utils';
 
+import { MissingFiles } from '@/components/downloadMissingFiles';
+
 export default function HomeScreen() {
 
 
     let configPath ="musicSharer.config" 
     let fileInfoCachePath="cleanedListOfFiles.cache"
     let config = readConfigFromFile(configPath)
+    let url = "http://"+config.ip + ":" + config.port.toString()
     let [responseText,setResponseText]=React.useState("")
     let [value, reloadPage]=React.useState(false)
     let [pageNumber, setPageNumber] = React.useState(0)
     const pageLength=1000 
     async function serverRequest(api:string){
-        let json = await sendRequest("http://"+config.ip + ":"+config.port.toString()+api)
+        let json = await sendRequest(url+api)
         setResponseText(JSON.stringify(json))
         
     }
@@ -46,7 +49,7 @@ export default function HomeScreen() {
             </ThemedView>
             <ThemedView style={styles.stepContainer}>
 
-                <ThemedText type="subtitle">Url of server: {config.ip}:{config.port.toString()}</ThemedText>
+                <ThemedText type="subtitle">Url of server: {url}</ThemedText>
                 <ThemedText type="subtitle"> Save location of music: {uriToUnixPath(config.savePath)} </ThemedText>
                 <ThemedText type="subtitle">Run SyncMusic on Computer</ThemedText>
                 <ThemedButton onPress={() => reloadPage(!value)} title="Reload Page"/>
@@ -58,7 +61,7 @@ export default function HomeScreen() {
                     alert("Started Can Take A long time:")
                     if(!file.exists){
                         console.log("No cache, Fetching file list")
-                        let files = getListOfFilesCleaned(config.savePath, "library/")
+                        let files = getListOfFilesCleaned(config.savePath, config.dataType+"/")
                         let str = ""
                         for (const file of files){
                             str+=file+"\n"
@@ -72,6 +75,7 @@ export default function HomeScreen() {
                         setResponseText("File exists in cache:\n"+str)
                     }
                 }} color="#841584" title="List Files in Save Path" />
+                <MissingFiles url = {url}  missingFilesPath={fileInfoCachePath} outputLocation={config.savePath}/>
                 <ThemedText> Warning, Delete Cache:</ThemedText>
                 <ThemedButton onPress={ () => {
                     let file = new File(Paths.cache,fileInfoCachePath )
@@ -80,7 +84,7 @@ export default function HomeScreen() {
                         alert("File deleted")
                     }} 
                     title = "Clear list of files Cache" color= "#a02c40"/>
-                <ThemedText type="subtitle">Page {pageNumber} of response text out of {Math.floor(responseText.length / pageLength)} pages </ThemedText>
+              <ThemedText type="subtitle">Page {pageNumber} of response text out of {Math.floor(responseText.length / pageLength)} pages </ThemedText>
                 <ThemedButton onPress = {() => setPageNumber(0)} color="#841584" title="Page 0"/>
                 <ThemedButton onPress = {() => setPageNumber(Math.max(pageNumber-1,0))} color="#841584" title="Previous Page"/>
                 <ThemedButton onPress = {() => setPageNumber(Math.min(pageNumber+1, Math.floor(responseText.length/pageLength)))} color="#841584" title="Next Page"/>

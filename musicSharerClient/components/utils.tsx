@@ -118,11 +118,12 @@ export function saveData(path:string, configInfo:ConfigData){
 }
 
 
-export async function sendRequest(url:string){
+export async function sendRequest(url:string,method="GET", body?:string){
     console.log(url)
     try{
         let res = await fetch(url, {
-            method: 'GET'
+            method: method,
+            body : body
         })
         if(!res.ok){
             return {Error:"Response code:"+res.status}
@@ -233,3 +234,19 @@ export function getListOfFilesCleaned(path:string, prefix:string){
     return fileStrings
 
 }
+
+export async function getMissingFiles(missingFilesPath:string, url:string){
+    console.log(missingFilesPath)
+    console.log(url)
+    let file = new File(Paths.cache,missingFilesPath)  
+    if (!file.exists){
+        alert("No list of files cache on system please first list files in save path")
+        return []
+    }
+    let fileList = file.textSync()
+    
+    let res =  await sendRequest(url+"/api/getMissingFiles","POST",fileList)
+    return res.message
+    
+}
+
