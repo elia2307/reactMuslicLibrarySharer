@@ -66,14 +66,17 @@ export default function HomeScreen() {
                         for (const file of files){
                             str+=file+"\n"
                         }
+                        str=str.trim()
                         file.create({overwrite:true})
                         file.write(str)
                         setResponseText(str)
+                        alert("Calculated File List")
                     }else{
                         console.log("File exists in cache")
                         let str = await file.text()
                         setResponseText("File exists in cache:\n"+str)
                     }
+
                 }} color="#841584" title="List Files in Save Path" />
                 <MissingFiles url = {url}  missingFilesPath={fileInfoCachePath} outputLocation={config.savePath}/>
                 <ThemedText> Warning, Delete Cache:</ThemedText>

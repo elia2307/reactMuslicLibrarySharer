@@ -89,8 +89,6 @@ export function MissingFiles(props:MissingFilesProps){
             }
             createdFile.write(content)
             console.log("File written to:" + decodeURI(createdFile.uri))
-            
-
             setFileIndex(fileIndex+1)
 
         }).catch(error =>   alert(error))   
@@ -101,6 +99,14 @@ export function MissingFiles(props:MissingFilesProps){
         downloadingView = (
             <ThemedView>
                 <ThemedButton onPress = { () => setFileIndex((fileIndex+1) % missingFiles.length)} title="Next file" color="#841584" />
+                <ThemedButton onPress = { () => {
+                    let fileList = new File(Paths.cache,props.missingFilesPath)
+                    let newText = fileList.textSync().trim() 
+                    for(let f of missingFiles){
+                        newText+="\n"+f
+                    }
+                    fileList.write(newText)
+                }} title="Add missing files to local file list" color="#841584"/>
                 <ThemedButton onPress = { () => setDownloaderEnabled(false) } title="Stop Download" color="#841584"/>
                 <ThemedText> {progressText} </ThemedText>
             </ThemedView>
@@ -110,7 +116,10 @@ export function MissingFiles(props:MissingFilesProps){
         <ThemedView>
             <ThemedButton onPress = {async () => {
                 let files = await getMissingFiles(props.missingFilesPath, props.url)
-                if(files.length == 0 )return
+                if(files.length == 0 ){
+                    alert("No missing files")
+                }
+                return
                 setDownloaderEnabled(true)
                 setFileIndex(0)
                 setMissingFiles(files)                           
