@@ -116,7 +116,7 @@ export async function downloadFile(filePath:string)
     path+=localPath
     const file = Bun.file(path)
     if(!await file.exists()){
-        console.log("Invalid file doesn't exist")
+        console.log("Invalid, file doesn't exist")
         return
     }
     return file
