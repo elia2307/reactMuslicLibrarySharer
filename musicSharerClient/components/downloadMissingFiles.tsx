@@ -71,27 +71,27 @@ export function MissingFiles(props:MissingFilesProps){
         let fullUrl = props.url + "/api/downloadFile/"+ missingFiles[fileIndex]
         progressText+="\n"+fullUrl
         if(missingFiles[fileIndex] != undefined){
-            
-        
-        File.downloadFileAsync(encodeURI(fullUrl), Paths.cache, {idempotent:true}).then( async (file) => {
-            //console.log("File downloaded path:"+file.uri)
-            let content = file.bytesSync() 
-            //first part is mp3 or flac 
-            let parts = missingFiles[fileIndex].split("/")
-            //last part is file name so don't need for finding correct folder
-            parts[0]=props.outputLocation
-            let dir = getCreatedDirectory(parts.slice(0,-1))
-            //console.log(decodeURI(dir.uri))
-            let createdFile = createFileSafe(dir,parts[parts.length-1])
-            if(createdFile == undefined){
-                alert("Error in creating file")
-                return
-            }
-            createdFile.write(content)
-            console.log("File written to:" + decodeURI(createdFile.uri))
-            setFileIndex(fileIndex+1)
+            File.downloadFileAsync(encodeURI(fullUrl), Paths.cache, {idempotent:true}).then( async (file) => {
+                //console.log("File downloaded path:"+file.uri)
+                let content = file.bytesSync() 
+                //first part is mp3 or flac 
+                let parts = missingFiles[fileIndex].split("/")
+                //last part is file name so don't need for finding correct folder
+                parts[0]=props.outputLocation
+                let dir = getCreatedDirectory(parts.slice(0,-1))
+                //console.log(decodeURI(dir.uri))
+                let createdFile = createFileSafe(dir,parts[parts.length-1])
+                if(createdFile == undefined){
+                    alert("Error in creating file")
+                    return
+                }
+                createdFile.write(content)
+                console.log("File written to:" + decodeURI(createdFile.uri))
+                setFileIndex(fileIndex+1)
+                //delete cache file to not waste space
+                file.delete()
 
-        }).catch(error =>   alert(error))   
+            }).catch(error =>   alert(error))   
         }
         else{
             progressText+="\nDownloads complete"
@@ -118,8 +118,8 @@ export function MissingFiles(props:MissingFilesProps){
                 let files = await getMissingFiles(props.missingFilesPath, props.url)
                 if(files.length == 0 ){
                     alert("No missing files")
+                    return
                 }
-                return
                 setDownloaderEnabled(true)
                 setFileIndex(0)
                 setMissingFiles(files)                           
@@ -128,5 +128,5 @@ export function MissingFiles(props:MissingFilesProps){
         </ThemedView>
     )
 
-    }
+}
 
