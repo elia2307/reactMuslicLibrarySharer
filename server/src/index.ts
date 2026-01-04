@@ -1,6 +1,6 @@
 import { file, serve } from "bun";
 import index from "./index.html";
-import { listFiles,syncMusic, findMissingFiles, downloadFile} from "./utils.ts";
+import { getLeftoverFiles, listFiles,syncMusic, findMissingFiles, downloadFile} from "./utils.ts";
 const server = serve({
   routes: {
     // Serve index.html for all unmatched routes.
@@ -13,9 +13,10 @@ const server = serve({
         });
     },
     "/api/syncMusic": async _ => {
-        syncMusic()
+        let out = await syncMusic()
         return Response.json({
-            message: "Success"
+            message: "Success",
+            out:out
         })
     },
     "/api/getMissingFiles": async req =>{
@@ -24,6 +25,12 @@ const server = serve({
         return Response.json({
                 message: await findMissingFiles(fileList)
         })
+    },
+    "/api/getLeftoverFiles": async req => {
+        const fileList = await req.text()
+            return Response.json({
+                message: await getLeftoverFiles(fileList)
+            })
     },
     "/api/downloadFile/*":  async req => {
         let apiLength = ("/api/downloadFile/").length

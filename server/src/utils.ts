@@ -1,5 +1,5 @@
 import { readdir } from "node:fs/promises"; 
-import { $ } from "bun";
+import { $, stdout } from "bun";
 async function tree(path:string){
     let out:string[] = []
     if(await Bun.file(path).exists()){
@@ -39,49 +39,78 @@ export async function listFiles(libraryType:string){
 export async function syncMusic(){
     console.log("Syncing Music")
     let pwd = await $`pwd`.text()
-    let scriptPath=pwd.substring(0,pwd.length-1) + "/syncMusic.sh"
-    Bun.spawn(["/bin/bash",scriptPath])
+    let executeablePath=pwd.substring(0,pwd.length-1) + "/library_converter"
+    let proc = Bun.spawn({cmd:[executeablePath], stdout:"pipe"});
+    return await proc.stdout.text();
 
+
+}
+
+
+async function getFileList(fileType?:string){
+    if (fileType == undefined) {
+        return
+    }
+    let files = await listFiles(fileType)
+    return files
+
+}
+
+function removeDuplicate(arr1 : string[], arr2: string[]){
+    //returns list of values in arr1 which are not in arr2 
+    //values only in arr2 are not in list returned
+    let unique:string[] = []
+    let arr2Index =0
+    for(let arr1Str of arr1){
+        let arr2Str = arr2[arr2Index]
+        //while clientFile is alphabettically before file increment client index to get to right point 
+        if(arr2Str != undefined){
+            while(arr1Str > arr2Str ){
+                arr2Index++;
+                arr2Str=arr2[arr2Index]
+                if(arr2Str == undefined)break;
+            }
+        }
+        if (arr2Str == undefined){
+            //if clientFile is undefined then at end of clientFiles array so rest of files push to missing files
+            unique.push(arr1Str)
+            continue
+        }
+        if(arr1Str === arr2Str){
+            // if files equal then incrment client index 
+            arr2Index++;
+        }
+        else{
+            // if files not equal then file is not in fileList 
+            unique.push(arr1Str)
+        }
+    }
+    return unique
+    
 }
 
 export async function findMissingFiles(fileList: string){
     let clientFiles:string[] = fileList.trim().split("\n").sort()
     let fileType=clientFiles[0]?.substring(0,clientFiles[0].indexOf("/"))
-    if(fileType == undefined) return "Bad input, invalid body of request"
-    let serverFiles = await listFiles(fileType)
+    let serverFiles = await getFileList(fileType)
+    if(serverFiles == undefined) return "Bad input, invalid body of request"
     if( serverFiles.length ==0 )return "Bad input, invalid body of request"
-    let missingFiles:string[] = []
-    let clientIndex =0
-    for(let file of serverFiles){
-        let clientFile = clientFiles[clientIndex]
-        //while clientFile is alphabettically before file increment client index to get to right point 
-        if(clientFile != undefined){
-            while(file > clientFile ){
-                clientIndex++;
-                clientFile=clientFiles[clientIndex]
-                if(clientFile == undefined)break;
-            }
-        }
-        if (clientFile == undefined){
-            //if clientFile is undefined then at end of clientFiles array so rest of files push to missing files
-            missingFiles.push(file)
-            continue
-        }
-        if(file === clientFile){
-            // if files equal then incrment client index 
-            clientIndex++;
-        }
-        else{
-            // if files not equal then file is not in fileList 
-            missingFiles.push(file)
-        }
-
-    }
+    let missingFiles = removeDuplicate(serverFiles,clientFiles)
     console.log("Number of Missing Files:" + missingFiles.length)
     return missingFiles
 }
 
 
+export async function getLeftoverFiles(fileList: string){
+    let clientFiles:string[] = fileList.trim().split("\n").sort()
+    let fileType=clientFiles[0]?.substring(0,clientFiles[0].indexOf("/"))
+    let serverFiles = await getFileList(fileType)
+    if(serverFiles == undefined) return "Bad input, invalid body of request"
+    if( serverFiles.length ==0 )return "Bad input, invalid body of request"
+    let leftoverFiles = removeDuplicate(clientFiles,serverFiles)
+    return leftoverFiles
+
+}
 export async function downloadFile(filePath:string)
 {    
     try{
@@ -121,3 +150,4 @@ export async function downloadFile(filePath:string)
     }
     return file
 }
+

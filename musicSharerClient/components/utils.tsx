@@ -250,3 +250,37 @@ export async function getMissingFiles(missingFilesPath:string, url:string){
     
 }
 
+
+export async function getLeftoverFiles(filesPath:string, url:string){
+    let file = new File(Paths.cache, filesPath)
+    if (!file.exists){
+        alert("No list of files cache on system please first list files in save path")
+        return []
+    }
+    let fileList = file.textSync();
+    let res = await sendRequest(url+"/api/getLeftoverFiles","POST",fileList)
+    return res.message
+}
+
+export function removeFilesFromFileCache(files:string[], path:string){
+    let file = new File(Paths.cache, path)
+    if (!file.exists){
+        alert("No list of files cache on system please first list files in save path")
+        return []
+    }
+    let fileList = file.textSync();
+    let fileArr = fileList.split("\n");
+    let newArr :string[]= []
+    for (let elem of fileArr){
+        if(!( elem in files)){
+            newArr.push(elem)
+        }
+    }
+    let newStr = ""
+    for ( let elem of newArr){
+        newStr +=elem + "\n"
+    }
+    newStr=newStr.trim()
+    file.create({overwrite:true})
+    file.write(newStr)
+}
