@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::env;
 use std::fs::remove_file;
 use std::fs;
 use std::fs::create_dir_all;
@@ -121,11 +122,13 @@ fn move_and_convert(input_path:&String, output_path:&String,file:&String, verbos
         let _original_path = Path::new(original_path_str.as_str());
         let args = ["-i",&original_path_str,"-acodec","libmp3lame",&full_path_str];
         //let args = format_args!("-i '{}' -acodec libmp3lame '{}'",original_path,path);
-        let mut output = Command::new("ffmpeg")
-            .args(args).spawn().unwrap() ;
-        let out = output.wait().unwrap();
+        let out = Command::new("ffmpeg")
+            .args(args).output().unwrap() ;
+        //let out = output.wait().unwrap();
         if verbose{
-            println!("{out}");
+            println!("{}",out.status);
+            println!("{}",String::from_utf8_lossy(&out.stdout));
+            println!("{}",String::from_utf8_lossy(&out.stderr));
         }
 
     }   
@@ -134,8 +137,10 @@ fn move_and_convert(input_path:&String, output_path:&String,file:&String, verbos
 fn  move_and_convert_files(input_path:&String, output_path:&String, files:Vec<String>, verbose:bool){
     for i in 0..files.len(){
         move_and_convert(input_path,output_path,&files[i],verbose);
-        println!("Completed {i} out of {}",files.len());
-        println!("{}%",(i/files.len())*100);
+        if verbose {
+            println!("Completed {} out of {}",i+1,files.len());
+        }
+        println!("{}%",((i+1)*100)/files.len());
     }
     return;
 }
@@ -144,7 +149,9 @@ fn convert_library(input_path:&String,output_path:&String,verbose:bool){
     let input_files = get_uncompressed_file_list(&input_path);
     let ouput_files = get_compressed_file_list(&output_path);
     let missing_files = find_missing(input_files,ouput_files);
-    println!("Number of missing files {}",missing_files.len());
+    if verbose{
+        println!("Number of missing files {}",missing_files.len());
+    }
     move_and_convert_files(input_path, output_path, missing_files,verbose);
 }
 
@@ -164,30 +171,44 @@ fn remove_leftover_files(original_path:&String, compressed_path : &String, verbo
         for file in &leftover{
             println!("{file}");
         }
+        println!("Number of leftover files {}",leftover.len());
     }
-    println!("Number of leftover files {}",leftover.len());
     remove_files(leftover, compressed_path);
 }
 
-fn music_converter(uncompressed_path:String, compressed_path:String,mode:String, verbose:bool){
+fn music_converter(uncompressed_path:&String, compressed_path:&String,mode:&String, verbose:bool){
     if mode == "convert"{
         convert_library(&uncompressed_path,&compressed_path,verbose);
     }
     else if mode == "leftover"{
-
         remove_leftover_files(&uncompressed_path, &compressed_path, verbose)
     }
     else if mode=="both"{
         convert_library(&uncompressed_path,&compressed_path,verbose);
         remove_leftover_files(&uncompressed_path, &compressed_path, verbose)
     }
+    else{
+        println!("Invalid mode: {mode}");
+        panic!();
+    }
+    println!("Success");
 }
 
 fn main() {
-    let uncompressed_path:String = String::from("/mnt/Data/Music/Library/");
-    let compressed_path = String::from("/mnt/Data/mp3Lib/");
-    let verbose = false;
-    let mode = String::from("leftover");
-    music_converter(uncompressed_path, compressed_path,mode, verbose)
+    let args: Vec<String> = env::args().collect();
+    if args.len() == 5 {
+        let uncompressed_path = &args[1];
+        let compressed_path = &args[2];
+        let mode = &args[3];
+        let verbose = &args[4] == "true";
+        music_converter(uncompressed_path, compressed_path, mode, verbose)
+    }
+    else{
+        let uncompressed_path:String = String::from("/mnt/Data/Music/Library/");
+        let compressed_path = String::from("/mnt/Data/mp3Lib/");
+        let verbose = false;
+        let mode = String::from("both");
+        music_converter(&uncompressed_path, &compressed_path,&mode, verbose)
+    }
 }
 
