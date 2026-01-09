@@ -241,7 +241,7 @@ export async function getMissingFiles(missingFilesPath:string, url:string){
     let file = new File(Paths.cache,missingFilesPath)  
     if (!file.exists){
         alert("No list of files cache on system please first list files in save path")
-        return []
+        throw new Error("No list of files on system")
     }
     let fileList = file.textSync()
     
@@ -283,4 +283,31 @@ export function removeFilesFromFileCache(files:string[], path:string){
     newStr=newStr.trim()
     file.create({overwrite:true})
     file.write(newStr)
+}
+
+
+
+
+export async function fetchFileCacheList(inputPath:string, dataType:string, outputPath:string){
+    const file = new File(Paths.cache, outputPath)
+    alert("Started Can Take A long time:")
+    if(!file.exists){
+        console.log("No cache, Fetching file list")
+        let files = getListOfFilesCleaned(inputPath, dataType+"/")
+        let str = ""
+        for (const file of files){
+            str+=file+"\n"
+        }
+        str=str.trim()
+        file.create({overwrite:true})
+        file.write(str)
+        alert("Calculated File List")
+        return str
+    }else{
+        console.log("File exists in cache")
+        let str = await file.text()
+        return str
+    }
+
+
 }

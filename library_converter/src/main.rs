@@ -138,8 +138,8 @@ fn  move_and_convert_files(input_path:&String, output_path:&String, files:Vec<St
     for i in 0..files.len(){
         move_and_convert(input_path,output_path,&files[i],verbose);
         if verbose {
-            println!("Completed {} out of {}",i+1,files.len());
         }
+        println!("Completed {} out of {}",i+1,files.len());
         println!("{}%",((i+1)*100)/files.len());
     }
     return;

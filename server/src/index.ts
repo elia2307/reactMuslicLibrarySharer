@@ -13,10 +13,9 @@ const server = serve({
         });
     },
     "/api/syncMusic": async _ => {
-        let out = await syncMusic()
+        syncMusic()
         return Response.json({
-            message: "Success",
-            out:out
+            message: "Started music sync",
         })
     },
     "/api/getMissingFiles": async req =>{

@@ -1,10 +1,12 @@
 import { StyleSheet, TextInputChangeEvent} from 'react-native';
 import * as React from 'react';
-import { Directory} from 'expo-file-system';
+import {File, Paths, Directory} from 'expo-file-system';
 
 import {isValidPort, isValidIpAddress, readConfigFromFile, ConfigData, saveData} from '@/components/utils'
 
 import {Picker} from '@react-native-picker/picker'
+
+
 
 import { ThemedTextInput} from '@/components/themed-textInput'
 import { ThemedText } from './themed-text';
@@ -85,6 +87,12 @@ export function SettingsComponent(props:SettingsProps){
 
 
             <ThemedButton onPress={() =>saveData(path,configData)} color='#841584' title='Save Settings'/>
+            <ThemedButton onPress={ () => {
+                let file = new File(Paths.cache, path)
+                if(!file.exists)return
+                file.delete()
+                alert("File deleted")
+            }} title = "Clear list of files Cache" color= "#a02c40"/>          
         </ThemedView>
 
     )

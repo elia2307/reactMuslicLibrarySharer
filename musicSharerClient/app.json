@@ -22,7 +22,9 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.musicSharerClient",
-      "permissions": ["android.permission.MANAGE_EXTERNAL_STORAGE"]
+      "permissions": [
+        "android.permission.MANAGE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "output": "static",
@@ -46,6 +48,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8eeb115c-ed0a-47a4-a0ce-535b2c1ab7a9"
+      }
     }
   }
 }

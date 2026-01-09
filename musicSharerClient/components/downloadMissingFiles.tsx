@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { getMissingFiles, getLeftoverFiles, removeFilesFromFileCache } from "./utils"
+import { getMissingFiles, getLeftoverFiles, removeFilesFromFileCache, fetchFileCacheList } from "./utils"
 import { ThemedView } from './themed-view';
 import { ThemedButton } from './themed-button';
 import { ThemedText } from './themed-text';
@@ -9,6 +9,7 @@ interface MissingFilesProps{
     missingFilesPath:string;
     url:string;
     outputLocation:string;
+    dataType:string;
 }
 function getCreatedDirectory(pathParts:string[],create:boolean = true){
     let dir = new Directory(pathParts[0])
@@ -167,6 +168,9 @@ export function MissingFiles(props:MissingFilesProps){
     return  (
         <ThemedView>
             <ThemedButton onPress = {async () => {
+                if(! new File(Paths.cache, props.missingFilesPath).exists){
+                    fetchFileCacheList(props.outputLocation,props.dataType , props.missingFilesPath)
+                }
                 let files = await getMissingFiles(props.missingFilesPath, props.url)
                 if(files.length == 0 ){
                     alert("No missing files")
