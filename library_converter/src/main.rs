@@ -176,12 +176,23 @@ fn remove_leftover_files(original_path:&String, compressed_path : &String, verbo
     remove_files(leftover, compressed_path);
 }
 
+fn count_missing(original_path:&String,compressed_path:&String){
+    let original_files = get_uncompressed_file_list(original_path);
+    let compressed_files = get_compressed_file_list(compressed_path);
+    let leftover = find_missing(compressed_files, original_files);
+    println!("{}",leftover.len());
+}
+
 fn music_converter(uncompressed_path:&String, compressed_path:&String,mode:&String, verbose:bool){
     if mode == "convert"{
         convert_library(&uncompressed_path,&compressed_path,verbose);
     }
     else if mode == "leftover"{
         remove_leftover_files(&uncompressed_path, &compressed_path, verbose)
+    }
+    else if mode == "count"{
+        count_missing(&uncompressed_path, &compressed_path);
+        return;
     }
     else if mode=="both"{
         convert_library(&uncompressed_path,&compressed_path,verbose);
@@ -196,19 +207,19 @@ fn music_converter(uncompressed_path:&String, compressed_path:&String,mode:&Stri
 
 fn main() {
     let args: Vec<String> = env::args().collect();
+    let mut uncompressed_path= &String::from("/mnt/Data/Music/Library/");
+    let mut compressed_path = &String::from("/mnt/Data/mp3Lib/");
+    let mut verbose = false;
+    let mut mode = &String::from("both");
     if args.len() == 5 {
-        let uncompressed_path = &args[1];
-        let compressed_path = &args[2];
-        let mode = &args[3];
-        let verbose = &args[4] == "true";
-        music_converter(uncompressed_path, compressed_path, mode, verbose)
+        uncompressed_path = &args[1];
+        compressed_path = &args[2];
+        mode = &args[3];
+        verbose = &args[4] == "true";
     }
-    else{
-        let uncompressed_path:String = String::from("/mnt/Data/Music/Library/");
-        let compressed_path = String::from("/mnt/Data/mp3Lib/");
-        let verbose = false;
-        let mode = String::from("both");
-        music_converter(&uncompressed_path, &compressed_path,&mode, verbose)
+    else if args.len() == 2 {
+        mode = &args[1];
     }
+    music_converter(&uncompressed_path, &compressed_path,&mode, verbose)
 }
 
