@@ -88,7 +88,7 @@ export function SettingsComponent(props:SettingsProps){
 
             <ThemedButton onPress={() =>saveData(path,configData)} color='#841584' title='Save Settings'/>
             <ThemedButton onPress={ () => {
-                let file = new File(Paths.cache, path)
+                let file = new File(Paths.cache, "cleanedListOfFiles.cache")
                 if(!file.exists)return
                 file.delete()
                 alert("File deleted")

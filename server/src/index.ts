@@ -1,6 +1,7 @@
 import { file, serve } from "bun";
+import { syncMusic} from "./syncMusic.tsx"
 import index from "./index.html";
-import { getLeftoverFiles, listFiles,syncMusic, findMissingFiles, downloadFile} from "./utils.ts";
+import { getLeftoverFiles, listFiles, findMissingFiles, downloadFile} from "./utils.ts";
 const server = serve({
   routes: {
     // Serve index.html for all unmatched routes.
@@ -13,9 +14,8 @@ const server = serve({
         });
     },
     "/api/syncMusic": async _ => {
-        syncMusic()
         return Response.json({
-            message: "Started music sync",
+            message: await syncMusic.run()
         })
     },
     "/api/getMissingFiles": async req =>{

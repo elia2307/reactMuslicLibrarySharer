@@ -194,8 +194,7 @@ export function getCleanListOfFiles(path:string){
 }
 
 export function uriToUnixPath(path:string){
-    //TODO remove weird .documents/tree/ stuff at end of path 
-    //
+    //TODO remove weird .documents/tree/ stuff at end of pa"cleanedListOfFiles.cache"    //
     let cleanedPath:string=""
     for(let i=0; i<path.length;i++){
         if(path[i]==='%'){
@@ -258,6 +257,7 @@ export async function getLeftoverFiles(filesPath:string, url:string){
         return []
     }
     let fileList = file.textSync();
+    //console.log(fileList)
     let res = await sendRequest(url+"/api/getLeftoverFiles","POST",fileList)
     return res.message
 }

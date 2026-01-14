@@ -1,5 +1,4 @@
 import { readdir } from "node:fs/promises"; 
-import { $, stdout } from "bun";
 async function tree(path:string){
     let out:string[] = []
     if(await Bun.file(path).exists()){
@@ -36,17 +35,6 @@ export async function listFiles(libraryType:string){
     return files
 }
 
-export async function syncMusic(){
-    console.log("Syncing Music")
-    let pwd = await $`pwd`.text()
-    let executeablePath=pwd.substring(0,pwd.length-1) + "/library_converter"
-    let proc = Bun.spawn({cmd:[executeablePath], stdout:"pipe"});
-    return await proc.stdout.text();
-
-
-}
-
-
 async function getFileList(fileType?:string){
     if (fileType == undefined) {
         return
@@ -82,6 +70,7 @@ function removeDuplicate(arr1 : string[], arr2: string[]){
         }
         else{
             // if files not equal then file is not in fileList 
+            console.log(arr1Str + " not in server list of files, curr server:" + arr2Str)
             unique.push(arr1Str)
         }
     }
@@ -99,7 +88,24 @@ export async function findMissingFiles(fileList: string){
     console.log("Number of Missing Files:" + missingFiles.length)
     return missingFiles
 }
-
+function isHiddenFile(file:string){
+    let parts = file.split("/")
+    for(let part of parts){
+        if(part[0] == '.'){
+            return true
+        }
+    }
+    return false
+}
+function removeHidden(files:string[]){
+    let out = []
+    for (let file of files){
+        if(!isHiddenFile(file)){
+            out.push(file)
+        }
+    }
+    return out
+}
 
 export async function getLeftoverFiles(fileList: string){
     let clientFiles:string[] = fileList.trim().split("\n").sort()
@@ -107,7 +113,11 @@ export async function getLeftoverFiles(fileList: string){
     let serverFiles = await getFileList(fileType)
     if(serverFiles == undefined) return "Bad input, invalid body of request"
     if( serverFiles.length ==0 )return "Bad input, invalid body of request"
+    clientFiles.map( (f) => {f.trim()})
     let leftoverFiles = removeDuplicate(clientFiles,serverFiles)
+    leftoverFiles = removeHidden(leftoverFiles)
+    //console.log(leftoverFiles)
+    console.log(leftoverFiles.length)
     return leftoverFiles
 
 }
@@ -150,4 +160,3 @@ export async function downloadFile(filePath:string)
     }
     return file
 }
-
