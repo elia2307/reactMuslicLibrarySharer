@@ -17,3 +17,10 @@ npx expo start
 
 Server:
 bun dev
+
+
+
+compile app 
+./musicSharerClient/android/gradlew assembleRelease
+load into phone
+adb install ./musicSharerClient/android/app/build/outputs/apk/release/app-release.apk

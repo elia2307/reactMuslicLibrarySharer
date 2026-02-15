@@ -159,7 +159,7 @@ fn remove_files(files:Vec<String>, start_path:&String){
     for file in files{
         let full_path = start_path.clone() + "/" + &file;
         let _ = remove_file(full_path);
-        
+
     }
 }
 
@@ -179,7 +179,7 @@ fn remove_leftover_files(original_path:&String, compressed_path : &String, verbo
 fn count_missing(original_path:&String,compressed_path:&String){
     let original_files = get_uncompressed_file_list(original_path);
     let compressed_files = get_compressed_file_list(compressed_path);
-    let leftover = find_missing(compressed_files, original_files);
+    let leftover = find_missing(original_files,compressed_files);
     println!("{}",leftover.len());
 }
 
@@ -219,6 +219,15 @@ fn main() {
     }
     else if args.len() == 2 {
         mode = &args[1];
+    }
+    else if args.len() == 3 {
+        mode = &args[1];
+        verbose = &args[2] == "true";
+    }
+    else if args.len() == 4 {
+        uncompressed_path = &args[1];
+        compressed_path = &args[2];
+        mode = &args[3];       
     }
     music_converter(&uncompressed_path, &compressed_path,&mode, verbose)
 }

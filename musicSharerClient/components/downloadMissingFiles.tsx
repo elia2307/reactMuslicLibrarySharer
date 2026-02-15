@@ -117,10 +117,11 @@ export function MissingFiles(props:MissingFilesProps){
     if(downloaderEnabled){
         let progressText = "Downloading "  +fileIndex.toString() + " out of " + missingFiles.length
         progressText +="\n Current file: " + missingFiles[fileIndex]
-        let fullUrl = props.url + "/api/downloadFile/"+ missingFiles[fileIndex]
+        //encopde uri component around missingfiles so special characters like # are encoded safely
+        let fullUrl = props.url + "/api/downloadFile/"+ encodeURIComponent(missingFiles[fileIndex])
         progressText+="\n"+fullUrl
         if(missingFiles[fileIndex] != undefined){
-            File.downloadFileAsync(encodeURI(fullUrl), Paths.cache, {idempotent:true}).then( async (file) => {
+            File.downloadFileAsync(fullUrl, Paths.cache, {idempotent:true}).then( async (file) => {
                 //console.log("File downloaded path:"+file.uri)
                 let content = file.bytesSync() 
                 //first part is mp3 or flac 
@@ -135,7 +136,7 @@ export function MissingFiles(props:MissingFilesProps){
                     return
                 }
                 createdFile.write(content)
-                console.log("File written to:" + decodeURI(createdFile.uri))
+                console.log("File written to:" + decodeURIComponent(createdFile.uri))
                 setFileIndex(fileIndex+1)
                 //delete cache file to not waste space
                 file.delete()

@@ -4,8 +4,7 @@ import {File, Paths, Directory} from 'expo-file-system';
 
 import {isValidPort, isValidIpAddress, readConfigFromFile, ConfigData, saveData} from '@/components/utils'
 
-import {Picker} from '@react-native-picker/picker'
-
+import {Checkbox} from 'expo-checkbox'
 
 
 import { ThemedTextInput} from '@/components/themed-textInput'
@@ -19,7 +18,7 @@ interface SettingsProps {
 
 export function SettingsComponent(props:SettingsProps){ 
 
-    let pickerStyle = StyleSheet.create({
+    let checkStyle = StyleSheet.create({
         lightContainer: {
             backgroundColor: '#d0d0c0',
 
@@ -74,18 +73,17 @@ export function SettingsComponent(props:SettingsProps){
             }}  color='#841584' title='Pick output directory'/>
             <ThemedText>Music data type from server:
             </ThemedText>
-            <Picker 
-                style={ [pickerStyle.darkContainer]}
-                selectedValue={configData.dataType}
-                onValueChange= {(type) => setConfigData((prev) => ({...prev,dataType:type}))}
-                prompt="File type of music to copy from server"
-            >
-                <Picker.Item label="Select File Type" enabled={false} />
-                <Picker.Item label="mp3" style = {{height:100, backgroundColor: "#242c40"}} color = "#e0e0e0" value="mp3" />
-                <Picker.Item label = "flac" style = {{height: 100, backgroundColor: '#242c40', flex: 0.4}} color = "#e0e0e0" value="flac" />
-            </Picker>
-
-
+            <ThemedText>Mp3:<Checkbox 
+                value={configData.dataType == "mp3"} 
+                onValueChange={ () => setConfigData((prev:ConfigData) => ({...prev,dataType:"mp3"}))} 
+                color={configData.dataType=="mp3"  ? "#4630EB":undefined} 
+            /></ThemedText>
+            <ThemedText>Flac:
+            <Checkbox 
+                value={configData.dataType == "flac"} 
+                onValueChange={ () => setConfigData((prev:ConfigData) => ({...prev,dataType:"flac"}))} 
+                color={configData.dataType=="flac"  ? "#4630EB":undefined} 
+            /></ThemedText>
             <ThemedButton onPress={() =>saveData(path,configData)} color='#841584' title='Save Settings'/>
             <ThemedButton onPress={ () => {
                 let file = new File(Paths.cache, "cleanedListOfFiles.cache")

@@ -48,7 +48,7 @@ export default function HomeScreen() {
                 <ThemedText type="subtitle"> Save location of music: {decodeURI(config.savePath)} </ThemedText>
                 <ThemedButton onPress={() => reloadPage(!value)} title="Reload Page"/>
                 <ThemedButton onPress={() => sendRequest(url+"/api/syncMusic").then( res => { alert(JSON.stringify(res.message))})} color="#841584" title="Sync Music" />
-                <ThemedButton onPress={async () => { await fetchFileCacheList(config.savePath, config.dataType,fileInfoCachePath)}} color="#841584" title="List Files in Save Path" />
+                <ThemedButton onPress={async () => { fetchFileCacheList(config.savePath, config.dataType,fileInfoCachePath).then(()=>alert("File List Generated"))}} color="#841584" title="List Files in Save Path" />
                 <MissingFiles dataType = {config.dataType} url = {url}  missingFilesPath={fileInfoCachePath} outputLocation={config.savePath}/>
             </ThemedView>
         </ParallaxScrollView>
