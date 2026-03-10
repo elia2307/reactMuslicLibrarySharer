@@ -193,7 +193,7 @@ fn count_missing(original_path:&String,compressed_path:&String){
 }
 
 fn run_converter_indefinately(uncompressed_path:&String,compressed_path:&String,verbose:bool, reciever:Option<Receiver<bool>>){
-    let sleep_time = time::Duration::from_millis(1000);
+    let sleep_time = time::Duration::from_millis(5000);
     match reciever {
         Some(rec) => {
             loop{

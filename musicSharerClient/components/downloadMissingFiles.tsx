@@ -114,6 +114,22 @@ export function MissingFiles(props:MissingFilesProps){
     let [downloaderEnabled, setDownloaderEnabled] = React.useState<boolean>(false)
     let [fileIndex,setFileIndex] = React.useState(0)
     let downloadingView = (<ThemedView></ThemedView>)
+
+    let startDownloadingFiles = async () => {
+        if(! new File(Paths.cache, props.missingFilesPath).exists){
+            fetchFileCacheList(props.outputLocation,props.dataType , props.missingFilesPath)
+        }
+        let files = await getMissingFiles(props.missingFilesPath, props.url)
+        if(files.length == 0 ){
+            alert("No more missing files")
+            return
+        }
+        setDownloaderEnabled(true)
+        setFileIndex(0)
+        setMissingFiles(files)                           
+        
+    }
+
     if(downloaderEnabled){
         let progressText = "Downloading "  +fileIndex.toString() + " out of " + missingFiles.length
         progressText +="\n Current file: " + missingFiles[fileIndex]
@@ -155,7 +171,8 @@ export function MissingFiles(props:MissingFilesProps){
                     newText+="\n"+f
                 }
                 fileList.write(newText)
-                
+                //run startdownling files again to allow downling new files added while downloader was running
+                startDownloadingFiles()
             }
         }
         downloadingView = (
@@ -168,19 +185,7 @@ export function MissingFiles(props:MissingFilesProps){
     }
     return  (
         <ThemedView>
-            <ThemedButton onPress = {async () => {
-                if(! new File(Paths.cache, props.missingFilesPath).exists){
-                    fetchFileCacheList(props.outputLocation,props.dataType , props.missingFilesPath)
-                }
-                let files = await getMissingFiles(props.missingFilesPath, props.url)
-                if(files.length == 0 ){
-                    alert("No missing files")
-                    return
-                }
-                setDownloaderEnabled(true)
-                setFileIndex(0)
-                setMissingFiles(files)                           
-            }} color='#841584' title="Download list of missing files from server" />
+            <ThemedButton onPress = { () => startDownloadingFiles()} color='#841584' title="Download list of missing files from server" />
             <ThemedButton onPress = { async() => {
                 let leftoverFiles = await getLeftoverFiles(props.missingFilesPath, props.url)
                 console.log("number of leftover files:"+ leftoverFiles.length.toString())
