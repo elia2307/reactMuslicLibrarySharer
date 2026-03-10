@@ -1,3 +1,5 @@
+use std::io;
+use std::time;
 use std::path::Path;
 use std::env;
 use std::fs::remove_file;
@@ -5,6 +7,9 @@ use std::fs;
 use std::fs::create_dir_all;
 use std::fs::read_dir;
 use std::process::Command;
+use std::sync::mpsc;
+use std::sync::mpsc::Receiver;
+use std::thread;
 
 fn file_tree(path:&String, sorted:bool, include_hidden:bool)-> Vec<String>{
     let mut vec = Vec::new();
@@ -183,6 +188,46 @@ fn count_missing(original_path:&String,compressed_path:&String){
     println!("{}",leftover.len());
 }
 
+fn run_converter_indefinately(uncompressed_path:&String,compressed_path:&String,verbose:bool, reciever:Receiver<bool>){
+    let sleep_time = time::Duration::from_millis(1000);
+    loop{
+        let res = reciever.try_recv();
+        match res {
+        Ok(_) => { 
+            println!("Killed run_converter_indefinately");
+            return;
+        }
+        Err(_) => {
+            convert_library(&uncompressed_path,&compressed_path, verbose)
+        }
+        } 
+        thread::sleep(sleep_time);
+    }
+}
+
+fn run_coverter_loop(uncompressed_path:String, compressed_path:String,verbose:bool){
+    let (tx,rx) = mpsc::channel();
+    //run convert_library in a loop on separate thread while waiting for key press to cancel
+    //execution
+    let _ = thread::spawn(move || {
+        run_converter_indefinately(&uncompressed_path, &compressed_path, verbose, rx);
+    });
+    loop{
+        let mut input = String::new();
+        println!("Please type STOP or S to stop execution");
+        io::stdin().read_line(&mut input).expect("error: unable to read user input");
+        input = input.trim().to_string();
+        if input == "STOP" || input == "S"{
+            println!("STOPPING EXECUTION");
+            let _ = tx.send(true);
+            return 
+        }
+    }
+     
+
+}
+
+
 fn music_converter(uncompressed_path:&String, compressed_path:&String,mode:&String, verbose:bool){
     if mode == "convert"{
         convert_library(&uncompressed_path,&compressed_path,verbose);
@@ -198,9 +243,13 @@ fn music_converter(uncompressed_path:&String, compressed_path:&String,mode:&Stri
         convert_library(&uncompressed_path,&compressed_path,verbose);
         remove_leftover_files(&uncompressed_path, &compressed_path, verbose)
     }
+    else if mode=="convert_loop"{
+        run_coverter_loop(uncompressed_path.to_string(), compressed_path.to_string(), verbose);
+    }
     else{
         println!("Invalid mode: {mode}");
-        panic!();
+        println!("Vaid modes are convert_loop,both,count,leftover,convert");
+        return;
     }
     println!("Success");
 }
