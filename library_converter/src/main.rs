@@ -143,9 +143,13 @@ fn  move_and_convert_files(input_path:&String, output_path:&String, files:Vec<St
     for i in 0..files.len(){
         move_and_convert(input_path,output_path,&files[i],verbose);
         if verbose {
+            println!("Completed {} out of {}",i+1,files.len());
+            println!("{}%",((i+1)*100)/files.len());
         }
-        println!("Completed {} out of {}",i+1,files.len());
-        println!("{}%",((i+1)*100)/files.len());
+        
+    }
+    if files.len() != 0{
+        println!("Converted {} files",files.len());
     }
     return;
 }
@@ -188,20 +192,30 @@ fn count_missing(original_path:&String,compressed_path:&String){
     println!("{}",leftover.len());
 }
 
-fn run_converter_indefinately(uncompressed_path:&String,compressed_path:&String,verbose:bool, reciever:Receiver<bool>){
+fn run_converter_indefinately(uncompressed_path:&String,compressed_path:&String,verbose:bool, reciever:Option<Receiver<bool>>){
     let sleep_time = time::Duration::from_millis(1000);
-    loop{
-        let res = reciever.try_recv();
-        match res {
-        Ok(_) => { 
-            println!("Killed run_converter_indefinately");
-            return;
+    match reciever {
+        Some(rec) => {
+            loop{
+                let res = rec.try_recv();
+                match res {
+                    Ok(_) => { 
+                        println!("Killed run_converter_indefinately");
+                        return;
+                    }
+                    Err(_) => {
+                        convert_library(&uncompressed_path,&compressed_path, verbose)
+                    }
+                } 
+                thread::sleep(sleep_time);
+            }
+        },
+        None => {
+            loop{
+                convert_library(&uncompressed_path,&compressed_path, verbose);
+                thread::sleep(sleep_time);
+            }
         }
-        Err(_) => {
-            convert_library(&uncompressed_path,&compressed_path, verbose)
-        }
-        } 
-        thread::sleep(sleep_time);
     }
 }
 
@@ -210,7 +224,7 @@ fn run_coverter_loop(uncompressed_path:String, compressed_path:String,verbose:bo
     //run convert_library in a loop on separate thread while waiting for key press to cancel
     //execution
     let _ = thread::spawn(move || {
-        run_converter_indefinately(&uncompressed_path, &compressed_path, verbose, rx);
+        run_converter_indefinately(&uncompressed_path, &compressed_path, verbose, Some(rx));
     });
     loop{
         let mut input = String::new();
@@ -246,9 +260,12 @@ fn music_converter(uncompressed_path:&String, compressed_path:&String,mode:&Stri
     else if mode=="convert_loop"{
         run_coverter_loop(uncompressed_path.to_string(), compressed_path.to_string(), verbose);
     }
+    else if mode=="infinite_convert"{
+        run_converter_indefinately(uncompressed_path, compressed_path, verbose, None)
+    }
     else{
         println!("Invalid mode: {mode}");
-        println!("Vaid modes are convert_loop,both,count,leftover,convert");
+        println!("Vaid modes are convert_loop,both,count,leftover,convert,infinite_convert");
         return;
     }
     println!("Success");
