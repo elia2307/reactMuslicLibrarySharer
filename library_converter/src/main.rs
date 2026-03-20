@@ -11,6 +11,8 @@ use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::thread;
 
+mod playlist_converter;
+
 fn file_tree(path:&String, sorted:bool, include_hidden:bool)-> Vec<String>{
     let mut vec = Vec::new();
     let mut directories = Vec::new();
@@ -143,6 +145,7 @@ fn  move_and_convert_files(input_path:&String, output_path:&String, files:Vec<St
     for i in 0..files.len(){
         move_and_convert(input_path,output_path,&files[i],verbose);
         if verbose {
+            println!("Converted {}",files[i]);
             println!("Completed {} out of {}",i+1,files.len());
             println!("{}%",((i+1)*100)/files.len());
         }
@@ -242,7 +245,7 @@ fn run_coverter_loop(uncompressed_path:String, compressed_path:String,verbose:bo
 }
 
 
-fn music_converter(uncompressed_path:&String, compressed_path:&String,mode:&String, verbose:bool){
+async fn music_converter(uncompressed_path:&String, compressed_path:&String,mode:&String, verbose:bool){
     if mode == "convert"{
         convert_library(&uncompressed_path,&compressed_path,verbose);
     }
@@ -261,7 +264,10 @@ fn music_converter(uncompressed_path:&String, compressed_path:&String,mode:&Stri
         run_coverter_loop(uncompressed_path.to_string(), compressed_path.to_string(), verbose);
     }
     else if mode=="infinite_convert"{
-        run_converter_indefinately(uncompressed_path, compressed_path, verbose, None)
+        run_converter_indefinately(uncompressed_path, compressed_path, verbose, None);
+    }
+    else if mode=="playlist"{
+        playlist_converter::convert_playlists(uncompressed_path, compressed_path).await;
     }
     else{
         println!("Invalid mode: {mode}");
@@ -270,8 +276,8 @@ fn music_converter(uncompressed_path:&String, compressed_path:&String,mode:&Stri
     }
     println!("Success");
 }
-
-fn main() {
+#[tokio::main]
+async fn main() {
     let args: Vec<String> = env::args().collect();
     let mut uncompressed_path= &String::from("/mnt/Data/Music/Library/");
     let mut compressed_path = &String::from("/mnt/Data/mp3Lib/");
@@ -295,6 +301,6 @@ fn main() {
         compressed_path = &args[2];
         mode = &args[3];       
     }
-    music_converter(&uncompressed_path, &compressed_path,&mode, verbose)
+    music_converter(&uncompressed_path, &compressed_path,&mode, verbose).await;
 }
 
