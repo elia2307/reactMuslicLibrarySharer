@@ -11,7 +11,11 @@ use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::thread;
 
+use playlist_converter::convert_flac_playlist_to_mp3;
+use utils::write_to_file;
+
 mod playlist_converter;
+mod utils;
 
 fn file_tree(path:&String, sorted:bool, include_hidden:bool)-> Vec<String>{
     let mut vec = Vec::new();
@@ -60,24 +64,6 @@ fn clean_flac_file(str:String) -> String{
     }
     return str;
 }
-//assumes file str ends in .mp3 doesn't check
-fn mp3_to_flac(str:String) -> String{
-    let prefix_rev :String = str.chars().rev().skip(4).collect();
-    let  prefix :String = prefix_rev.chars().rev().collect();
-    let out = prefix + ".flac";
-    return out;
-}
-//removes prefix from all strings in v
-//doesn't check if elements start with prefix or are long enough 
-fn remove_prefix(v :Vec<String>, prefix:&String) -> Vec<String>{
-    let mut out = Vec::new();
-    for elem in v {
-        let converted = elem.chars().skip(prefix.len()).collect();
-        out.push(converted);
-    }
-    return out;
-}
-
 //takes 2 sorted vectors finds elements from full_vec not in missing_vec
 //however will convert files in full_vec flac to mp3 in missing vec, 1.flac is same as 1.mp3
 fn find_missing(full_vec:Vec<String>,missing_vec:Vec<String>)-> Vec<String>{
@@ -104,13 +90,13 @@ fn find_missing(full_vec:Vec<String>,missing_vec:Vec<String>)-> Vec<String>{
 }
 
 fn get_uncompressed_file_list(path:&String) -> Vec<String>{
-    let list = remove_prefix(file_tree(path, false,false),path);
+    let list = utils::remove_prefix(file_tree(path, false,false),path);
     let mut files: Vec<String> = list.iter().map(|str| clean_flac_file(str.to_string())).collect();
     files.sort();
     return files;
 }
 fn get_compressed_file_list(path:&String) -> Vec<String>{
-    let list = remove_prefix(file_tree(path,true,false),path);
+    let list = utils::remove_prefix(file_tree(path,true,false),path);
     return list;
 }
 
@@ -120,12 +106,18 @@ fn move_and_convert(input_path:&String, output_path:&String,file:&String, verbos
     let path = Path::new(full_path_str.as_str()); 
     let _ = create_dir_all(path.parent().unwrap());
     let mut original_path_str = input_path.clone() + file.as_str();
-    if fs::exists(&original_path_str).unwrap(){
+    if utils::is_m3u_file(file){
+        let new_playlist_text = convert_flac_playlist_to_mp3(&original_path_str, input_path, output_path);
+        write_to_file(Path::new(&full_path_str), &new_playlist_text)
+        
+
+    }
+    else if fs::exists(&original_path_str).unwrap(){
         let p = Path::new(original_path_str.as_str());
         let _ = std::fs::copy(p, path);
     }
     else{
-        original_path_str= mp3_to_flac(original_path_str);
+        original_path_str= utils::mp3_to_flac(original_path_str);
         let _original_path = Path::new(original_path_str.as_str());
         let args = ["-i",&original_path_str,"-acodec","libmp3lame",&full_path_str];
         //let args = format_args!("-i '{}' -acodec libmp3lame '{}'",original_path,path);
