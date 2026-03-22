@@ -27,11 +27,11 @@ struct Args {
     #[arg(short,long, default_value_t=String::from("/mnt/Data/mp3Lib/"))]
     compressed_path: String,
     /// Location for the config file path
-    #[arg(long, default_value_t=String::from("~/.config/library_converter"))]
+    #[arg(long, default_value_t=String::from("/home/eli/.config/library_converter"))]
     config_path:String,
     /// Location of database containing playlist information in sqlite format, only needed for
     /// playlist mode
-    #[arg(short,long, default_value_t=String::from(""))]
+    #[arg(short,long, default_value_t=String::from("/home/eli/.local/share/lollypop/playlists.db"))]
     playlist_database_path:String,
     /// For playlist mode, have relative paths in the resulting m3u files for the output location
     #[arg(long, default_value_t=true)]

@@ -24,6 +24,7 @@ pub struct Song{
 //converts a sql playlist file to a list of m3u files in the output path directory 
 //where each playlist name is [playlist_name].m3u
 pub async fn convert_playlists(database_path:&String, output_path:&String, relative_paths:bool){
+    println!("{}",database_path);
     let database_path = make_path_absolute(database_path);
     let output_path = make_path_absolute(output_path);
     let mut output_folder = output_path.clone();
