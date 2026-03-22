@@ -1,9 +1,7 @@
-use std::fs::read;
 use std::num::ParseFloatError;
 use std::path::{absolute, Path};
 use std::process::Command;
 use crate::utils::{self, is_flac_file};
-use serde::Deserialize;
 
 pub struct Playlist{
     playlist_name:String,
@@ -112,7 +110,7 @@ fn select_from_db(db:&sqlite::Connection, query:&String) ->Vec<Vec<String>> {
     let mut out = Vec::new();
     db.iterate(query, |pairs| {
         let mut val = Vec::new();
-        for &(name, value) in pairs.iter() {
+        for &(_name, value) in pairs.iter() {
             //println!("{} = {}", name, value.unwrap());
             val.push(value.unwrap().to_string());
 
@@ -153,34 +151,6 @@ fn convert_path_to_mp3_folder(path:&String, flac_folder_path:&String,mp3_folder_
     }
     mp3_path = utils::replace_file_prefix(&mp3_path, flac_folder_path,mp3_folder_path);
     return mp3_path;
-
-}
-pub fn convert_playlist_songs_to_mp3_folder(songs:&Vec<Song>,flac_folder_path:&String,mp3_folder_path:&String)->Vec<Song>{
-    let mut out = Vec::new();
-    for song in songs{
-        let mut mp3_song = song.clone();
-        mp3_song.path = convert_path_to_mp3_folder(&mp3_song.path, flac_folder_path, mp3_folder_path);
-        out.push(mp3_song);
-    }
-    return out;
-}
-
-fn read_m3u_file(playlist_path:&Path) -> Playlist{
-    let text = utils::read_from_file(playlist_path);
-    let lines = text.lines();
-    let mut songs = Vec::new(); 
-    for line in lines{
-        if line.starts_with("#"){
-            continue;
-        }
-        //for now won't get metadata since the relative paths won't work
-        songs.push(create_song_object_from_path(&line.trim().to_string()));
-        //songs.push(line.trim().to_string());
-
-    }
-    let playlist_name = playlist_path.file_stem().unwrap().to_str().unwrap().to_string();
-    let playlist = Playlist{playlist_name,songs};
-    return playlist;
 
 }
 

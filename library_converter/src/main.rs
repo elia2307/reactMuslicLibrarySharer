@@ -71,7 +71,6 @@ async fn music_converter(args:Args){
             return;
             }
         }
-    println!("Success");
 }
 #[tokio::main]
 async fn main() {
