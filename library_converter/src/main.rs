@@ -1,68 +1,81 @@
 mod playlist_converter;
 mod library_converter;
 mod utils;
-use std::env;
+use clap::Parser;
 
 use playlist_converter::convert_playlists;
 use library_converter::{convert_library, remove_leftover_files, count_missing, run_coverter_loop, run_converter_indefinately};
 
-async fn music_converter(uncompressed_path:&String, compressed_path:&String,mode:&String, verbose:bool){
-    if mode == "convert"{
-        convert_library(&uncompressed_path,&compressed_path,verbose);
-    }
-    else if mode == "leftover"{
-        remove_leftover_files(&uncompressed_path, &compressed_path, verbose)
-    }
-    else if mode == "count"{
-        count_missing(&uncompressed_path, &compressed_path);
-        return;
-    }
-    else if mode=="both"{
-        convert_library(&uncompressed_path,&compressed_path,verbose);
-        remove_leftover_files(&uncompressed_path, &compressed_path, verbose)
-    }
-    else if mode=="convert_loop"{
-        run_coverter_loop(uncompressed_path.to_string(), compressed_path.to_string(), verbose);
-    }
-    else if mode=="infinite_convert"{
-        run_converter_indefinately(uncompressed_path, compressed_path, verbose, None);
-    }
-    else if mode=="playlist"{
-        let relative_paths= true;
-        convert_playlists(uncompressed_path, compressed_path,relative_paths).await;
-    }
-    else{
-        println!("Invalid mode: {mode}");
-        println!("Vaid modes are convert_loop,both,count,leftover,convert,infinite_convert");
-        return;
-    }
+/// A music library helper tool. It can convert a music library from flac to mp3 allowing for 2
+/// libraries 2 exist in sync with the same music files, also supports automatic playlist importing
+/// from sqlite database to a m3u, and converting library will also convert the playlists in m3u format.
+/// uses ffmpeg to achieve music file converting and getting metadata from music files.
+#[derive(Parser,Debug)]
+#[command(version,about,long_about=None)]
+struct Args {
+    /// Mode for the program to operate in, valid options are, convert, removeLeftover, count,
+    /// playlist, convert_loop, infinite_convert, both, save config
+    #[arg(short,long, default_value_t = String::from("both"))]
+    mode: String,
+    /// Verbose - boolean, print more information as program is running
+    #[arg(short,long, default_value_t=false)]
+    verbose: bool,
+    /// Location of music library containing the original files
+    #[arg(short,long, default_value_t=String::from("/mnt/Data/Music/Library/"))]
+    uncompressed_path : String,
+    /// Location of the folder containing where the compressed files are/ should be outputed 
+    #[arg(short,long, default_value_t=String::from("/mnt/Data/mp3Lib/"))]
+    compressed_path: String,
+    /// Location for the config file path
+    #[arg(long, default_value_t=String::from("~/.config/library_converter"))]
+    config_path:String,
+    /// Location of database containing playlist information in sqlite format, only needed for
+    /// playlist mode
+    #[arg(short,long, default_value_t=String::from(""))]
+    playlist_database_path:String,
+    /// For playlist mode, have relative paths in the resulting m3u files for the output location
+    #[arg(long, default_value_t=true)]
+    use_relative_paths : bool,
+    /// Output location for generated playlists
+    #[arg(short,long,default_value_t=String::from("."))]
+    output_location:String,
+    /// Also copy generated playlist to the uncompressed library location after playlists are
+    /// created
+    #[arg(long,default_value_t=false)]
+    sync_generated_playlists:bool,
+}
+
+
+//async fn music_converter(uncompressed_path:&String, compressed_path:&String,mode:&String, verbose:bool){
+async fn music_converter(args:Args){
+    match args.mode.as_str(){
+        "convert" => convert_library(&args.uncompressed_path,&args.compressed_path,args.verbose),
+        "leftover" => remove_leftover_files(&args.uncompressed_path, &args.compressed_path, args.verbose), 
+        "count" => count_missing(&args.uncompressed_path, &args.compressed_path),
+        "both" => {
+            convert_library(&args.uncompressed_path,&args.compressed_path,args.verbose);
+            remove_leftover_files(&args.uncompressed_path, &args.compressed_path, args.verbose)
+        },
+        "convert_loop" => run_coverter_loop(args.uncompressed_path.to_string(), args.compressed_path.to_string(), args.verbose),
+        "infinite_convert" =>  run_converter_indefinately(&args.uncompressed_path, &args.compressed_path, args.verbose, None),
+        "playlist" => {
+            convert_playlists(&args.playlist_database_path, &args.output_location,args.use_relative_paths).await;
+            if args.sync_generated_playlists{
+                convert_library(&args.uncompressed_path, &args.compressed_path, args.verbose);
+            }
+            
+        },
+        _ => {
+            println!("Invalid mode: {}", args.mode);
+            println!("Vaid modes are convert_loop,both,count,leftover,convert,infinite_convert");
+            return;
+            }
+        }
     println!("Success");
 }
 #[tokio::main]
 async fn main() {
-    let args: Vec<String> = env::args().collect();
-    let mut uncompressed_path= &String::from("/mnt/Data/Music/Library/");
-    let mut compressed_path = &String::from("/mnt/Data/mp3Lib/");
-    let mut verbose = false;
-    let mut mode = &String::from("both");
-    if args.len() == 5 {
-        uncompressed_path = &args[1];
-        compressed_path = &args[2];
-        mode = &args[3];
-        verbose = &args[4] == "true";
-    }
-    else if args.len() == 2 {
-        mode = &args[1];
-    }
-    else if args.len() == 3 {
-        mode = &args[1];
-        verbose = &args[2] == "true";
-    }
-    else if args.len() == 4 {
-        uncompressed_path = &args[1];
-        compressed_path = &args[2];
-        mode = &args[3];       
-    }
-    music_converter(&uncompressed_path, &compressed_path,&mode, verbose).await;
+    let args = Args::parse();
+    music_converter(args).await;
 }
 
