@@ -28,15 +28,14 @@ compile app
 ./musicSharerClient/android/gradlew assembleRelease
 load into phone
 adb install ./musicSharerClient/android/app/build/outputs/apk/release/app-release.apk
-o
 
 
 
 
-TODO 
-Add config file support for library converter, to allow saving default paths
-Add button in musicSharerClient to allow for force redownloading playlist folder
-Add functionality in library converter to overwrite playlists folder in compressed library for convert
-Make sure symlinks are handled properly 
-Add password verification for web server downloading of files
+TODO <br>
+Add config file support for library converter, to allow saving default paths<br>
+Add button in musicSharerClient to allow for force redownloading playlist folder<br>
+Add functionality in library converter to overwrite playlists folder in compressed library for convert<br>
+Make sure symlinks are handled properly <br>
+Add password verification for web server downloading of files <br>
 Add env variables for web server for library locations or config files
