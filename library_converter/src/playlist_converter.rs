@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{absolute, Path};
 use crate::utils;
 
 
@@ -11,17 +11,22 @@ pub struct Playlist{
 
 //converts a sql playlist file to a list of m3u files in the output path directory 
 //where each playlist name is [playlist_name].m3u
-pub async fn convert_playlists(database_path:&String, output_path:&String){
+pub async fn convert_playlists(database_path:&String, output_path:&String, relative_paths:bool){
+    let database_path = make_path_absolute(database_path);
+    let output_path = make_path_absolute(output_path);
     let mut output_folder = output_path.clone();
 
 
     output_folder.push('/');
-    let db =  match open_database(database_path).await{
+    let db =  match open_database(&database_path).await{
         None => return,
         Some(v) => v,
     };
     let playlists = get_playlist_list(&db).await; 
-    for playlist in playlists{
+    for mut playlist in playlists{
+        if relative_paths{
+            playlist.songs=convert_paths_to_relative(&playlist.songs, &output_path);
+        }
         let playlist_m3u = convert_playlist_to_m3u(&playlist);
         let mut playlist_filename = format!("{}.m3u",playlist.playlist_name.clone());
         playlist_filename = playlist_filename.replace("/", " ");
@@ -139,3 +144,49 @@ fn read_m3u_file(playlist_path:&Path) -> Playlist{
 
 }
 
+fn convert_paths_to_relative(paths:&Vec<String>, relative_path:&String)->Vec<String>{
+    let mut out = Vec::new();
+    for path in paths{
+        out.push(convert_path_to_relative(&path,&relative_path));
+    }
+    return out;
+}
+//assumes path is absolute if it is relative returns path 
+fn convert_path_to_relative(path:&String, relative_path_location:&String)->String{
+    if !path.starts_with("/"){
+        return path.clone();
+    }
+    let mut out = String::from(".");
+    let path_parts :Vec<&str>= path.split("/").collect();
+    let relative_path_parts :Vec<&str> = relative_path_location.split("/").collect();
+    let mut index1=0;
+    let mut index2=0;
+    while path_parts.get(index1).unwrap() == relative_path_parts.get(index2).unwrap(){
+        index1+=1;
+        index2+=1;
+        if index1 >= path_parts.len() || index2 >= relative_path_parts.len(){
+            break;
+        }
+    }
+    while index2 < relative_path_parts.len(){
+        out += &String::from("/.."); 
+        index2+=1;
+    }
+    while index1 < path_parts.len(){
+        out +=&format!("/{}",  path_parts.get(index1).unwrap()); 
+        index1+=1;
+    }
+
+
+
+
+
+    return out;
+
+}
+
+fn make_path_absolute(path:&String) -> String{
+    let absolute_path = absolute(path).unwrap();
+    let absolute_string = absolute_path.into_os_string().into_string().unwrap();
+    return absolute_string;
+}

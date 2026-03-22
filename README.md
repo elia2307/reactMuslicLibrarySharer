@@ -6,9 +6,9 @@ and will run converter on server side
 
 
 TODO:
-add rust music converter to server 
-add remove leftover files to android app (server and client routes)
 cleanup android app, make buttons more unified and simplier to use 
+add m3u playlist downloading (make full paths in playlist file get changed to relative paths 
+in the download and make client side fix m3u file path)
 
 
 Run 

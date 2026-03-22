@@ -259,7 +259,8 @@ async fn music_converter(uncompressed_path:&String, compressed_path:&String,mode
         run_converter_indefinately(uncompressed_path, compressed_path, verbose, None);
     }
     else if mode=="playlist"{
-        playlist_converter::convert_playlists(uncompressed_path, compressed_path).await;
+        let relative_paths= true;
+        playlist_converter::convert_playlists(uncompressed_path, compressed_path,relative_paths).await;
     }
     else{
         println!("Invalid mode: {mode}");
