@@ -1,12 +1,24 @@
+use std::fs::read;
+use std::num::ParseFloatError;
 use std::path::{absolute, Path};
+use std::process::Command;
 use crate::utils::{self, is_flac_file};
-
-
+use serde::Deserialize;
 
 pub struct Playlist{
     playlist_name:String,
-    songs: Vec<String>,
+    songs: Vec<Song>,
 }
+#[derive(Clone)]
+pub struct Song{
+    path:String,
+    title:Option<String>,
+    length:Option<i32>, //seconds
+    artist:Option<String>,
+    album:Option<String>,
+    genre:Option<String>,
+}
+
 
 
 //converts a sql playlist file to a list of m3u files in the output path directory 
@@ -25,7 +37,7 @@ pub async fn convert_playlists(database_path:&String, output_path:&String, relat
     let playlists = get_playlist_list(&db).await; 
     for mut playlist in playlists{
         if relative_paths{
-            playlist.songs=convert_paths_to_relative(&playlist.songs, &output_path);
+            playlist.songs=convert_song_paths_to_relative(&playlist.songs, &output_path);
         }
         let playlist_m3u = convert_playlist_to_m3u(&playlist);
         let mut playlist_filename = format!("{}.m3u",playlist.playlist_name.clone());
@@ -33,9 +45,9 @@ pub async fn convert_playlists(database_path:&String, output_path:&String, relat
         
         let full_path: String= output_folder.clone() + playlist_filename.as_str(); 
         let playlist_path = Path::new(full_path.as_str());
-        println!("{full_path}");
+        //println!("{full_path}");
         utils::write_to_file(playlist_path, &playlist_m3u);
-        println!("{playlist_m3u}");
+        //println!("{playlist_m3u}");
     }
 
 }
@@ -58,13 +70,16 @@ async fn get_playlist_list(db:&sqlite::Connection)->Vec<Playlist>{
 fn convert_playlist_to_m3u(playlist:&Playlist)->String{
     let mut out=String::from("#EXTM3U");
     for song in playlist.songs.clone(){
-        out.push_str("\n#EXTINF\n");
-        out+=&song;
+        let header = format!("\n#EXTINF{}\n",get_m3u_song_metadata(&song));
+        //println!("{header}");
+        out+=&header;
+        //out.push_str("\n#EXTINF\n");
+        out+=&song.path;
     }
     return out;
 }
 
-async fn get_playlist_songs(db:&sqlite::Connection, id:&String)-> Vec<String>{
+async fn get_playlist_songs(db:&sqlite::Connection, id:&String)-> Vec<Song>{
     //sql injection risk since id is only numbers as a string, but in theory someone 
     //could add invalid ids to sql file and cause drop table etc
     //but that would require access to database and at that point could drop table 
@@ -74,7 +89,8 @@ async fn get_playlist_songs(db:&sqlite::Connection, id:&String)-> Vec<String>{
     let songs = select_from_db(db, &query);
     for s in songs{
         //make sure path is relative and a file path not a uri path
-        out.push(utils::clean_file_path(&s[0]));
+        out.push(create_song_object_from_path(&utils::clean_file_path(&s[0])));
+        //out.push(utils::clean_file_path(&s[0]));
     }
     return out;
 }
@@ -96,7 +112,7 @@ fn select_from_db(db:&sqlite::Connection, query:&String) ->Vec<Vec<String>> {
     db.iterate(query, |pairs| {
         let mut val = Vec::new();
         for &(name, value) in pairs.iter() {
-            println!("{} = {}", name, value.unwrap());
+            //println!("{} = {}", name, value.unwrap());
             val.push(value.unwrap().to_string());
 
         }       
@@ -109,25 +125,42 @@ fn select_from_db(db:&sqlite::Connection, query:&String) ->Vec<Vec<String>> {
 
 
 pub fn convert_flac_playlist_to_mp3(playlist_path:&String, flac_folder_path:&String, mp3_folder_path:&String)->String{
-    let mut playlist =read_m3u_file(Path::new(playlist_path));
-    playlist.songs = convert_playlist_songs_to_mp3_folder(&playlist.songs, flac_folder_path, mp3_folder_path);
-    return convert_playlist_to_m3u(&playlist);
+
+    let text = utils::read_from_file(Path::new(playlist_path));
+    let lines = text.lines();
+    let mut output_text =String::from("");
+    for line in lines{
+        if line.starts_with('#'){
+            output_text+=line;
+        }
+        else{
+            output_text+=&convert_path_to_mp3_folder(&line.trim().to_string(),flac_folder_path,mp3_folder_path);
+        }
+        output_text+="\n";
+    }
+    return output_text;
+    
+    //let mut playlist =read_m3u_file(Path::new(playlist_path));
+    
+    //playlist.songs = convert_playlist_songs_to_mp3_folder(&playlist.songs, flac_folder_path, mp3_folder_path);
+    //return convert_playlist_to_m3u(&playlist);
 }
-pub fn convert_playlist_songs_to_mp3_folder(songs:&Vec<String>,flac_folder_path:&String,mp3_folder_path:&String)->Vec<String>{
+fn convert_path_to_mp3_folder(path:&String, flac_folder_path:&String,mp3_folder_path:&String) -> String{
+    let mut mp3_path = path.clone();
+    if is_flac_file(&mp3_path){
+        mp3_path = utils::flac_to_mp3(mp3_path);
+    }
+    mp3_path = utils::replace_file_prefix(&mp3_path, flac_folder_path,mp3_folder_path);
+    return mp3_path;
+
+}
+pub fn convert_playlist_songs_to_mp3_folder(songs:&Vec<Song>,flac_folder_path:&String,mp3_folder_path:&String)->Vec<Song>{
     let mut out = Vec::new();
     for song in songs{
         let mut mp3_song = song.clone();
-        if is_flac_file(song){
-            mp3_song = utils::flac_to_mp3(song.to_string());
-            println!("{mp3_song}");
-        }
-        mp3_song = utils::replace_file_prefix(&mp3_song, flac_folder_path,mp3_folder_path);
-
-        //need to replace start path ot flac folder to mp3 folder
+        mp3_song.path = convert_path_to_mp3_folder(&mp3_song.path, flac_folder_path, mp3_folder_path);
         out.push(mp3_song);
-
     }
-
     return out;
 }
 
@@ -139,7 +172,9 @@ fn read_m3u_file(playlist_path:&Path) -> Playlist{
         if line.starts_with("#"){
             continue;
         }
-        songs.push(line.trim().to_string());
+        //for now won't get metadata since the relative paths won't work
+        songs.push(create_song_object_from_path(&line.trim().to_string()));
+        //songs.push(line.trim().to_string());
 
     }
     let playlist_name = playlist_path.file_stem().unwrap().to_str().unwrap().to_string();
@@ -148,10 +183,13 @@ fn read_m3u_file(playlist_path:&Path) -> Playlist{
 
 }
 
-fn convert_paths_to_relative(paths:&Vec<String>, relative_path:&String)->Vec<String>{
-    let mut out = Vec::new();
-    for path in paths{
-        out.push(convert_path_to_relative(&path,&relative_path));
+fn convert_song_paths_to_relative(songs:&Vec<Song>, relative_path:&String)->Vec<Song>{
+    let mut out:Vec<Song> = Vec::new();
+    for song in songs{
+        let mut s = song.clone();
+        s.path = convert_path_to_relative(&s.path, relative_path);
+        //out.push(convert_path_to_relative(&path,&relative_path));
+        out.push(song.clone());
     }
     return out;
 }
@@ -180,17 +218,106 @@ fn convert_path_to_relative(path:&String, relative_path_location:&String)->Strin
         out +=&format!("/{}",  path_parts.get(index1).unwrap()); 
         index1+=1;
     }
-
-
-
-
-
     return out;
-
 }
 
 fn make_path_absolute(path:&String) -> String{
     let absolute_path = absolute(path).unwrap();
     let absolute_string = absolute_path.into_os_string().into_string().unwrap();
     return absolute_string;
+}
+
+fn get_m3u_song_metadata(song:&Song)->String{
+    let mut out=String::from(":");
+    if song.length != None{
+        out+=&song.length.unwrap().to_string();
+
+    }
+    out+=", ";
+    if song.artist != None{
+        out+=&song.artist.clone().unwrap();
+    }
+    out+= " - ";
+    if song.title != None{
+        out+=&song.title.clone().unwrap();
+    }
+    if song.genre != None{
+        out+=", Genre:";
+        out+=&song.genre.clone().unwrap();
+    }
+    if song.album != None{
+        out+=", Album:";
+        out+=&song.album.clone().unwrap();
+    }
+    //println!("{out}");
+    return out;
+}
+
+fn create_song_object_from_path(path:&String) -> Song{
+    //println!("{path}");
+    let command_output = Command::new("ffprobe")
+        .arg(path.as_str())
+        .arg("-of")
+        .arg("json")
+        .arg("-show_entries")
+        .arg("format_tags=ALBUM,TITLE,GENRE,ARTIST:format=duration")
+        .output()
+        .expect("Failed to get song information");
+    let output_string= String::from_utf8(command_output.stdout).unwrap();
+    //println!("command output as string:{}",output_string);
+    let json : serde_json::Value= serde_json::from_str(&output_string).expect("JSON from ffprobe was not formatted properly");
+    let format: serde_json::Value;
+    match json.get("format"){
+        Some(v) => {
+            format=v.clone();
+        },
+        None => {
+            return Song{path:path.clone(), title:None, length:None, artist:None, album:None, genre:None};
+        }
+    }
+    let length:Option<i32> = match format.get("duration"){
+        Some(v) => convert_string_float_to_i32(&remove_quotes(&v.to_string()).to_string()),
+        None => None,
+    };
+    let tags = match format.get("tags"){
+        Some(v) =>v,
+        None => {return Song{path:path.to_string(), title:None, length, artist:None,album:None,genre:None};}
+    };
+    let title=read_json_field(tags, "TITLE");
+    let artist=read_json_field(tags, "ARTIST");
+    let genre=read_json_field(tags, "GENRE");
+    let album=read_json_field(tags, "ALBUM");
+    return Song{path:path.to_string(), title, length, artist,album, genre };
+}
+
+fn read_json_field(json:&serde_json::Value, field:&str)-> Option<String>{
+    match json.get(field){
+        Some(v) =>return Some(remove_quotes(&v.to_string())),
+        None => return None,
+    }
+}
+fn convert_string_float_to_i32(str:&String) -> Option<i32>{
+    let f:Result<f32, ParseFloatError> = str.parse();
+    match f {
+        Ok(f) => {
+            return Some(f as i32);
+        }
+        Err(..) =>{
+            return None;
+        }
+    }
+}
+
+fn remove_quotes(str:&String)->String{
+    if !str.starts_with("\"") || !str.ends_with("\""){
+        return str.clone();
+    }
+    else{
+        let mut chars = str.chars();
+        chars.next();
+        chars.next_back();
+        return chars.as_str().to_string();
+    }
+
+
 }
