@@ -1,5 +1,5 @@
 use std::path::{absolute, Path};
-use crate::utils;
+use crate::utils::{self, is_flac_file};
 
 
 
@@ -116,7 +116,11 @@ pub fn convert_flac_playlist_to_mp3(playlist_path:&String, flac_folder_path:&Str
 pub fn convert_playlist_songs_to_mp3_folder(songs:&Vec<String>,flac_folder_path:&String,mp3_folder_path:&String)->Vec<String>{
     let mut out = Vec::new();
     for song in songs{
-        let mut mp3_song = utils::flac_to_mp3(song.to_string());
+        let mut mp3_song = song.clone();
+        if is_flac_file(song){
+            mp3_song = utils::flac_to_mp3(song.to_string());
+            println!("{mp3_song}");
+        }
         mp3_song = utils::replace_file_prefix(&mp3_song, flac_folder_path,mp3_folder_path);
 
         //need to replace start path ot flac folder to mp3 folder

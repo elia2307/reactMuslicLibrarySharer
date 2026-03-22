@@ -52,6 +52,15 @@ pub fn is_m3u_file(file:&String)-> bool{
     let ending = &file[ending_indicies..];
     return ending==".m3u"; 
 }
+pub fn is_flac_file(file:&String) -> bool{
+    if file.len()<5{
+        return false
+    }
+    let ending_indicies = file.char_indices().nth_back(4).unwrap().0;
+    let ending = &file[ending_indicies..];
+    println!("{ending}");
+    return ending == ".flac";
+}
 
 
 
