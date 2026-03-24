@@ -233,4 +233,17 @@ pub fn run_coverter_loop(uncompressed_path:String, compressed_path:String,verbos
 }
 
 
-
+pub fn sync_playlist_libaries(uncompressed_path:&String, compressed_path:&String){
+    let playlist_path = uncompressed_path.clone() + "/Playlists";
+        if !Path::new(&playlist_path).exists(){
+        println!("No playlists in uncompress libary");
+        return;
+    }
+    let full_output = compressed_path.clone() + "/Playlists";
+    let output_playlist_path = Path::new(&full_output);
+    for entry in fs::read_dir(playlist_path).unwrap(){
+        let entry = entry.unwrap();
+       fs::copy(entry.path(),  output_playlist_path.join(entry.file_name())).unwrap();
+    }
+    return;
+}

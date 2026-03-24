@@ -4,7 +4,7 @@ mod utils;
 use clap::Parser;
 
 use playlist_converter::convert_playlists;
-use library_converter::{convert_library, remove_leftover_files, count_missing, run_coverter_loop, run_converter_indefinately};
+use library_converter::{convert_library, remove_leftover_files, count_missing, run_coverter_loop, run_converter_indefinately, sync_playlist_libaries};
 
 /// A music library helper tool. It can convert a music library from flac to mp3 allowing for 2
 /// libraries 2 exist in sync with the same music files, also supports automatic playlist importing
@@ -14,7 +14,7 @@ use library_converter::{convert_library, remove_leftover_files, count_missing, r
 #[command(version,about,long_about=None)]
 struct Args {
     /// Mode for the program to operate in, valid options are, convert, removeLeftover, count,
-    /// playlist, convert_loop, infinite_convert, both, save config
+    /// playlist, convert_loop, infinite_convert, both, save_config, sync_playlist_libaries
     #[arg(short,long, default_value_t = String::from("both"))]
     mode: String,
     /// Verbose - boolean, print more information as program is running
@@ -65,9 +65,10 @@ async fn music_converter(args:Args){
             }
             
         },
+        "sync_playlist_libaries" => sync_playlist_libaries(&args.uncompressed_path, &args.compressed_path),
         _ => {
             println!("Invalid mode: {}", args.mode);
-            println!("Vaid modes are convert_loop,both,count,leftover,convert,infinite_convert");
+            println!("Vaid modes are convert_loop,both,count,leftover,convert,infinite_convert,sync_playlist_libaries");
             return;
             }
         }
