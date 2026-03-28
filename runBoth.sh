@@ -2,7 +2,7 @@
 
 (cd musicSharerClient; npx expo start)&
 (cd server; bun dev)&
-syncMusic infinite_convert &
+syncMusic -m infinite_convert &
 
 wait 
 

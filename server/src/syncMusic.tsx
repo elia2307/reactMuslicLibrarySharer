@@ -5,7 +5,7 @@ export class syncMusic{
     static async run(){
         let pwd = await $`pwd`.text()
         let command = "syncMusic"
-        let noFiles:string = await Bun.spawn({cmd:[command, "-m, "count"]}).stdout.text();
+        let noFiles:string = await Bun.spawn({cmd:[command, "-m", "count"]}).stdout.text();
         noFiles=noFiles.trim()
         if(syncMusic.running){
             return "Sync Music already currently running, currently:" + noFiles.toString() +  "files left to convert"
