@@ -1,4 +1,4 @@
-use std::fs::read_to_string;
+
 use url::Url;
 use std::fs::File;
 use std::path::Path;
@@ -58,15 +58,26 @@ pub fn is_flac_file(file:&String) -> bool{
     }
     let ending_indicies = file.char_indices().nth_back(4).unwrap().0;
     let ending = &file[ending_indicies..];
-    println!("{ending}");
     return ending == ".flac";
 }
 
 
 
 pub fn read_from_file(path:&Path)->String{
-    let contents = read_to_string(path).expect("Error in reading file");
-    return contents;
+    return match read_from_file_safe(path){
+        Ok(s) => s,
+        Err(e) => {
+            println!("{} has invalid characters so will read file as an empty string, as when trying to read file error:{}",path.to_string_lossy(),e);
+            String::from("")
+        }
+    }
+}
+
+fn read_from_file_safe(path:&Path)->Result<String, Box<dyn std::error::Error>>{
+    let mut file = File::open(path)?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer)?;
+    return Ok(buffer.iter().map(|&c| c as char).collect());
 }
 
 pub fn write_to_file(path:&Path, text:&String){

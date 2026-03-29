@@ -124,11 +124,13 @@ fn select_from_db(db:&sqlite::Connection, query:&String) ->Vec<Vec<String>> {
 
 
 pub fn convert_flac_playlist_to_mp3(playlist_path:&String, flac_folder_path:&String, mp3_folder_path:&String)->String{
-
     let text = utils::read_from_file(Path::new(playlist_path));
     let lines = text.lines();
     let mut output_text =String::from("");
     for line in lines{
+        if line.len() == 0{
+            continue;
+        }
         if line.starts_with('#'){
             output_text+=line;
         }
