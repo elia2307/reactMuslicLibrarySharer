@@ -1,0 +1,13 @@
+update client app to use compilied expo not expo go 
+add feature where search local network for a device running server
+(e.g. :3000/isRunningServer/ 
+    returns hostname + confirmation)
+to allow for automatic server finding 
+allow storing hostname instead of ip/port for address 
+(backend can store ip address and if not found search network)
+password support / encryption support 
+
+
+background tasks 
+so can start download files and close app or let run in background and send notification
+

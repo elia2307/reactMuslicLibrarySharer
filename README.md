@@ -40,4 +40,4 @@ Make sure symlinks are handled properly <br>
 Add password verification for web server downloading of files <br>
 Add env variables for web server for library locations or config files<br>
 Check error handlign and how program operates when flac and mp3 of the same file exist in compressed library (or just flac file) and make sure funcitonality still works properly<br>
-
+Add custom flac to mp3 file converter functionality in library converter aswell as a quality number like in ffmpeg

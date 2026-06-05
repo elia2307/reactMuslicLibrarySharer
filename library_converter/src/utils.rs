@@ -4,17 +4,21 @@ use std::fs::File;
 use std::path::Path;
 use std::io::prelude::*;
 
+pub fn remove_last_n_characters(str:&String, n:usize)->String{
+    let string_rev:String = str.chars().rev().skip(n).collect();
+    return string_rev.chars().rev().collect();
+}
+
+
 //assumes file str ends in .mp3 doesn't check
 pub fn mp3_to_flac(str:String) -> String{
-    let prefix_rev :String = str.chars().rev().skip(4).collect();
-    let  prefix :String = prefix_rev.chars().rev().collect();
+    let prefix = remove_last_n_characters(&str, 4);
     let out = prefix + ".flac";
     return out;
 }
 
 pub fn flac_to_mp3(str:String) -> String{
-    let prefix_rev :String = str.chars().rev().skip(5).collect();
-    let  prefix :String = prefix_rev.chars().rev().collect();
+    let prefix :String = remove_last_n_characters(&str, 5);
     let out = prefix + ".mp3";
     return out;
 }

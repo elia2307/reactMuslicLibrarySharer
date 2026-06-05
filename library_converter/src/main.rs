@@ -5,6 +5,7 @@ use clap::Parser;
 
 use playlist_converter::convert_playlists;
 use library_converter::{convert_library, remove_leftover_files, count_missing, run_coverter_loop, run_converter_indefinately, sync_playlist_libaries};
+use utils::remove_last_n_characters;
 
 /// A music library helper tool. It can convert a music library from flac to mp3 allowing for 2
 /// libraries 2 exist in sync with the same music files, also supports automatic playlist importing
